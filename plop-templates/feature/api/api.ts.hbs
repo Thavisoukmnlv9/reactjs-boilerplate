@@ -1,0 +1,7 @@
+import { api } from '@/lib/api'
+
+import type { {{pascalCase name}} } from '../types'
+
+export function list{{pascalCase name}}(): Promise<{{pascalCase name}}[]> {
+  return api.get<{{pascalCase name}}[]>('/{{kebabCase name}}')
+}

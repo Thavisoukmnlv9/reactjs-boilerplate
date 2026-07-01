@@ -1,0 +1,9 @@
+import type { RouteObject } from 'react-router-dom'
+
+export const {{camelCase name}}Routes: RouteObject[] = [
+  {
+    path: '{{kebabCase name}}',
+    lazy: () =>
+      import('./pages/{{pascalCase name}}Page').then((m) => ({ Component: m.{{pascalCase name}}Page })),
+  },
+]

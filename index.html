@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en" suppressHydrationWarning>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Production-grade modular React + TypeScript boilerplate" />
+    <meta name="theme-color" content="#f54a00" />
+
+    <!-- Favicons / app icons (from business-sync-admin-portal) -->
+    <link rel="icon" href="/favicon-48x48.png" sizes="48x48" />
+    <link rel="icon" href="/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" href="/favicon-16x16.png" sizes="16x16" />
+    <link rel="icon" href="/icon.svg" sizes="any" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="React Boilerplate" />
+
+    <!-- Preload the critical Latin font; other scripts stream via unicode-range in fonts.css -->
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/noto-sans-regular.woff2"
+      crossorigin="anonymous"
+    />
+
+    <title>React Boilerplate</title>
+    <script>
+      // Prevent theme flash-of-unstyled-content before React hydrates.
+      ;(function () {
+        try {
+          var stored = localStorage.getItem('theme')
+          var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+          if (stored === 'dark' || (!stored && systemDark)) {
+            document.documentElement.classList.add('dark')
+          }
+        } catch (_) {}
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

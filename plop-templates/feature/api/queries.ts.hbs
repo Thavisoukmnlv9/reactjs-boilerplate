@@ -1,0 +1,12 @@
+import { useQuery } from '@tanstack/react-query'
+
+import { list{{pascalCase name}} } from './{{kebabCase name}}-api'
+
+export const {{camelCase name}}Keys = {
+  all: ['{{kebabCase name}}'] as const,
+  lists: () => [...{{camelCase name}}Keys.all, 'list'] as const,
+}
+
+export function use{{pascalCase name}}List() {
+  return useQuery({ queryKey: {{camelCase name}}Keys.lists(), queryFn: list{{pascalCase name}} })
+}

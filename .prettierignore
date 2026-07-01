@@ -1,0 +1,15 @@
+dist
+coverage
+playwright-report
+test-results
+node_modules
+package-lock.json
+pnpm-lock.yaml
+.husky/_
+plop-templates
+src/shared
+src/core
+src/app/config/sidebar-config.ts
+src/styles/globals.css
+src/styles/fonts.css
+src/**/*.gen.ts

@@ -1,0 +1,19 @@
+export const USER_STATUS = { ACTIVE: 'ACTIVE', INACTIVE: 'INACTIVE' } as const
+export const SUBSCRIPTION_STATUS = {
+  ACTIVE: 'ACTIVE',
+  TRIALING: 'TRIALING',
+  PAST_DUE: 'PAST_DUE',
+  CANCELLED: 'CANCELLED',
+} as const
+export const INVOICE_STATUS = {
+  DRAFT: 'DRAFT',
+  OPEN: 'OPEN',
+  PAID: 'PAID',
+  OVERDUE: 'OVERDUE',
+  CANCELLED: 'CANCELLED',
+} as const
+export const BRANCH_TYPE = {
+  STORE: 'STORE',
+  WAREHOUSE: 'WAREHOUSE',
+  FOOD_SERVICE: 'FOOD_SERVICE',
+} as const

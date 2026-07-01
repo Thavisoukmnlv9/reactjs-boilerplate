@@ -1,0 +1,46 @@
+export const en = {
+  common: {
+    appName: 'React Boilerplate',
+    actions: {
+      create: 'Create',
+      edit: 'Edit',
+      delete: 'Delete',
+      cancel: 'Cancel',
+      save: 'Save',
+      search: 'Search',
+      retry: 'Retry',
+    },
+    states: {
+      loading: 'Loading…',
+      empty: 'Nothing here yet',
+      error: 'Something went wrong',
+    },
+    theme: { light: 'Light', dark: 'Dark', system: 'System' },
+    language: 'Language',
+  },
+  auth: {
+    signIn: 'Sign in',
+    signInSubtitle: 'Sign in to your account to continue',
+    email: 'Email',
+    password: 'Password',
+    signOut: 'Sign out',
+    signingIn: 'Signing in…',
+    invalidCredentials: 'Invalid email or password',
+  },
+  users: {
+    title: 'Users',
+    subtitle: 'Manage members of your organization',
+    newUser: 'New user',
+    editUser: 'Edit user',
+    deleteUser: 'Delete user',
+    deleteConfirm: 'This will permanently remove {{name}}. This cannot be undone.',
+    columns: { name: 'Name', email: 'Email', role: 'Role', createdAt: 'Created', actions: '' },
+    form: { name: 'Full name', email: 'Email', role: 'Role' },
+    empty: 'No users found. Create your first one.',
+  },
+  dashboard: {
+    title: 'Dashboard',
+    welcome: 'Welcome back',
+    stats: { users: 'Users', revenue: 'Revenue', orders: 'Orders', churn: 'Churn' },
+  },
+} as const

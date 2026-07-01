@@ -1,0 +1,485 @@
+@import "tailwindcss";
+@import "./fonts.css";
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-auth-canvas: var(--auth-canvas);
+
+  /* BusinessSync CI — brand ramp + elevation as Tailwind utilities */
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-bright: var(--brand-bright);
+  --shadow-e1: var(--e1);
+  --shadow-e2: var(--e2);
+  --shadow-e3: var(--e3);
+  --shadow-brand: var(--e-brand);
+}
+
+:root {
+  /* ========================================================================
+     BusinessSync — Corporate Identity (source of truth)
+     Ref: brand/05 _ Brand CI Guideline.html
+     50% White · 30% Orange · 20% Black. Every grey is black at low opacity.
+     ======================================================================== */
+  --brand: #f54a00; /* Flame Orange — primary action / accent */
+  --brand-deep: #c23a00; /* Ember — pressed / strong text ("Sync") */
+  --brand-bright: #ff6a2a; /* Tangerine — hover lift */
+  --brand-soft: #f4f4f4; /* Mist — neutral brand surface */
+
+  --ink: #000000; /* Black — primary text / structure */
+  --ink-2: rgba(0, 0, 0, 0.6); /* Secondary text */
+  --ink-3: rgba(0, 0, 0, 0.4); /* Tertiary / captions */
+  --paper: #ffffff; /* White — canvas */
+  --paper-2: #f4f4f4; /* Mist — panels / surfaces */
+  --paper-3: #e8e8e8; /* Cloud — wells / tracks */
+  --line: rgba(0, 0, 0, 0.12); /* Hairline border */
+  --line-2: rgba(0, 0, 0, 0.18); /* Strong rule / input border */
+
+  /* Functional signal hues (accents / status text) */
+  --ok: oklch(0.62 0.13 150);
+  --warn: oklch(0.74 0.15 80);
+  --stop: oklch(0.58 0.18 27);
+
+  /* Elevation */
+  --e1: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 1px rgba(0, 0, 0, 0.04);
+  --e2: 0 4px 14px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  --e3: 0 18px 48px -12px rgba(0, 0, 0, 0.22), 0 6px 16px rgba(0, 0, 0, 0.08);
+  --e-brand: 0 14px 34px -10px
+    color-mix(in oklab, var(--brand) 55%, transparent);
+  /* Hover elevation for interactive surfaces — a touch deeper than rest (e2). */
+  --e-hover:
+    0 2px 4px rgba(0, 0, 0, 0.05), 0 12px 28px -8px rgba(0, 0, 0, 0.14);
+
+  --radius: 0.75rem;
+  --shadow-card: var(--e2);
+
+  /* ===== shadcn semantic tokens → mapped onto the CI above ===== */
+  --auth-canvas: color-mix(in srgb, var(--brand) 4%, var(--paper));
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+
+  --primary: var(--brand);
+  --primary-foreground: #ffffff; /* White on Orange — CI button rule */
+  --secondary: var(--paper-2);
+  --secondary-foreground: var(--ink);
+  --muted: var(--paper-2);
+  --muted-foreground: var(--ink-2);
+  --accent: color-mix(
+    in srgb,
+    var(--brand) 8%,
+    var(--paper)
+  ); /* faint brand tint for hovers */
+  --accent-foreground: var(--brand-deep);
+
+  /* Status fills deepened from the CI signal hues so text passes contrast */
+  --destructive: oklch(0.52 0.2 27);
+  --destructive-foreground: #ffffff;
+  --success: oklch(0.5 0.13 150);
+  --success-foreground: #ffffff;
+  --warning: var(--warn);
+  --warning-foreground: #3a2a00;
+
+  --border: var(--line);
+  --input: var(--line-2);
+  --ring: var(--brand);
+
+  /* Charts — orange ramp anchored by ink, per CI data viz */
+  --chart-1: var(--brand);
+  --chart-2: var(--brand-bright);
+  --chart-3: var(--brand-deep);
+  --chart-4: var(--ink);
+  --chart-5: #999999;
+
+  /* Sidebar / nav — light surface in light mode; orange-tint active state.
+     (.dark flips this to an ink surface — follows the theme.) */
+  --sidebar: var(--paper);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: color-mix(in srgb, var(--brand) 12%, var(--paper));
+  --sidebar-accent-foreground: var(--brand-deep);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--brand);
+
+  /* Transaction / checkout motion (shared across apps) */
+  --tx-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --tx-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --tx-duration: 480ms;
+  --tx-duration-fast: 280ms;
+
+  /* UI interaction motion — fast, purposeful (hover / focus / press).
+     Used by interactive surfaces across the admin so timing stays consistent. */
+  --ui-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ui-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Spring-like emphasis curve for lifts / presses (shared with pos apps). */
+  --ui-ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --ui-duration: 180ms;
+  --ui-duration-fast: 120ms;
+}
+
+.dark {
+  /* CI on dark: black canvas, white ink, orange lifts to Tangerine. */
+  --brand-soft: #161616;
+
+  --ink: #ffffff;
+  --ink-2: rgba(255, 255, 255, 0.66);
+  --ink-3: rgba(255, 255, 255, 0.45);
+  --paper: #000000;
+  --paper-2: #141414;
+  --paper-3: #1f1f1f;
+  --line: rgba(255, 255, 255, 0.14);
+  --line-2: rgba(255, 255, 255, 0.2);
+
+  --e1: 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 1px rgba(0, 0, 0, 0.4);
+  --e2: 0 4px 14px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --e3: 0 18px 48px -12px rgba(0, 0, 0, 0.7), 0 6px 16px rgba(0, 0, 0, 0.5);
+  --e-hover: 0 2px 6px rgba(0, 0, 0, 0.5), 0 16px 36px -10px rgba(0, 0, 0, 0.6);
+  --shadow-card: var(--e2);
+
+  --auth-canvas: #000000;
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: #060606;
+  --card-foreground: var(--ink);
+  --popover: #060606;
+  --popover-foreground: var(--ink);
+
+  --primary: var(--brand-bright); /* Tangerine reads brighter on black */
+  --primary-foreground: #000000;
+  --secondary: #161616;
+  --secondary-foreground: var(--ink);
+  --muted: #161616;
+  --muted-foreground: var(--ink-2);
+  --accent: color-mix(in srgb, var(--brand) 22%, #000000);
+  --accent-foreground: #ffffff;
+
+  --destructive: oklch(0.6 0.19 25);
+  --destructive-foreground: #ffffff;
+  --success: oklch(0.7 0.14 150);
+  --success-foreground: #000000;
+  --warning: oklch(0.8 0.14 80);
+  --warning-foreground: #000000;
+
+  --border: var(--line);
+  --input: rgba(255, 255, 255, 0.16);
+  --ring: var(--brand-bright);
+
+  --chart-1: var(--brand-bright);
+  --chart-2: #ff8a52;
+  --chart-3: #f54a00;
+  --chart-4: #ffffff;
+  --chart-5: #8a8a8a;
+
+  --sidebar: #060606;
+  --sidebar-foreground: rgba(255, 255, 255, 0.72);
+  --sidebar-primary: var(--brand-bright);
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: rgba(255, 255, 255, 0.08);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: var(--brand-bright);
+}
+
+/* ─── Transaction / checkout motion utilities ─────────────────────────────── */
+@keyframes tx-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes tx-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tx-rise-fade {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tx-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.tx-modal-backdrop-in {
+  animation: tx-backdrop-in var(--tx-duration-fast) var(--tx-ease-standard) both;
+}
+
+.tx-modal-panel-in {
+  animation: tx-panel-in var(--tx-duration) var(--tx-ease-out) both;
+}
+
+.tx-motion-rise {
+  animation: tx-rise-fade var(--tx-duration) var(--tx-ease-out) both;
+}
+
+.tx-motion-rise-delay-1 {
+  animation-delay: 80ms;
+}
+.tx-motion-rise-delay-2 {
+  animation-delay: 160ms;
+}
+.tx-motion-rise-delay-3 {
+  animation-delay: 240ms;
+}
+.tx-motion-rise-delay-4 {
+  animation-delay: 320ms;
+}
+.tx-motion-rise-delay-5 {
+  animation-delay: 400ms;
+}
+
+.tx-motion-scale {
+  animation: tx-scale-in calc(var(--tx-duration) * 0.9) var(--tx-ease-out) both;
+}
+
+.tx-motion-scale-delay-1 {
+  animation-delay: 60ms;
+}
+
+.tx-page-in {
+  animation: tx-rise-fade var(--tx-duration) var(--tx-ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tx-modal-backdrop-in,
+  .tx-modal-panel-in,
+  .tx-motion-rise,
+  .tx-motion-scale,
+  .tx-page-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .tx-motion-rise-delay-1,
+  .tx-motion-rise-delay-2,
+  .tx-motion-rise-delay-3,
+  .tx-motion-rise-delay-4,
+  .tx-motion-rise-delay-5,
+  .tx-motion-scale-delay-1 {
+    animation-delay: 0ms !important;
+  }
+}
+
+/* ─── Custom keyframes ───────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ─── Shared UI utilities (opt-in; additive — no existing screen changes) ──── */
+
+/* Tabular figures for money, counts and any aligned numeric column. */
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  letter-spacing: -0.01em;
+}
+
+/* Interactive surface — resting elevation that lifts on hover and settles on
+   press. For clickable cards / rows / tiles. Honours reduced-motion. */
+@utility surface-interactive {
+  transition: box-shadow var(--ui-duration) var(--ui-ease), transform
+    var(--ui-duration) var(--ui-ease), border-color var(--ui-duration)
+    var(--ui-ease);
+  &:hover {
+    box-shadow: var(--e2);
+    transform: translateY(-1px);
+  }
+  &:active {
+    transform: translateY(0);
+    box-shadow: var(--e1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .surface-interactive {
+    transition: box-shadow var(--ui-duration) var(--ui-ease);
+  }
+  .surface-interactive:hover,
+  .surface-interactive:active {
+    transform: none;
+  }
+}
+
+/* ─── Premium shared utilities ───────────────────────────────────────────────
+   One cohesive design language for the admin. Reuse these instead of
+   re-styling per screen so every module inherits the same rhythm. Mirrors the
+   POS apps' utility layer, adapted onto the admin's CI tokens. */
+@layer components {
+  /* Eyebrow / overline — uppercase, tracked, muted. For section + column
+     headers and stat labels. */
+  .text-eyebrow {
+    @apply font-medium text-[0.6875rem] uppercase tracking-[0.06em] text-muted-foreground;
+  }
+
+  /* Standard elevated surface — Card-equivalent for ad-hoc panels. */
+  .surface {
+    @apply rounded-xl border border-border bg-card shadow-[var(--shadow-card)];
+  }
+
+  /* Hero surface — elevated panel washed with a faint diagonal brand tint. For
+     identity / profile headers that should feel warmer than a plain card
+     without shouting. Holds up in both themes via color-mix on --brand. */
+  .surface-hero {
+    @apply rounded-2xl border border-border shadow-[var(--shadow-card)];
+    background-image: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--brand) 7%, var(--card)),
+      var(--card) 62%
+    );
+  }
+
+  /* Soft tonal icon tile — brand-tinted rounded square framing a glyph. Shared
+     by avatars, stat icons and section headers for one visual rhythm. */
+  .icon-tile {
+    @apply flex shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary;
+  }
+
+  /* Interactive surface — soft lift + brand-tinted border on hover, settles on
+     press. Pair with .surface (or a Card) on clickable tiles. The spring curve
+     reads more tactile than surface-interactive; reduced-motion honoured below. */
+  .interactive {
+    transition:
+      transform var(--ui-duration) var(--ui-ease-spring),
+      box-shadow var(--ui-duration) var(--ui-ease-spring),
+      border-color var(--ui-duration) var(--ui-ease-spring);
+  }
+  .interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--e-hover);
+    border-color: color-mix(in srgb, var(--brand) 28%, var(--border));
+  }
+  .interactive:active {
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .interactive,
+    .interactive:hover,
+    .interactive:active {
+      transition: none;
+      transform: none;
+    }
+  }
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    min-height: 100%;
+  }
+
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    font-family:
+      "Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+    /* Disable weight/style synthesis: fonts.css declares weight ranges that
+       map every requested weight (100–900) to a real woff2 file. Synthesis
+       on Lao/Thai/CJK glyphs produced visibly distorted strokes. */
+    font-synthesis: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+    @apply bg-background text-foreground;
+  }
+}
+
+/* react-day-picker v9 */
+.rdp-root {
+  --rdp-accent-color: var(--primary);
+  --rdp-accent-background-color: var(--accent);
+  --rdp-day-height: 2rem;
+  --rdp-day-width: 2rem;
+  --rdp-day_button-height: 1.75rem;
+  --rdp-day_button-width: 1.75rem;
+  --rdp-day_button-border-radius: var(--radius-md);
+  --rdp-selected-border: 2px solid var(--primary);
+  --rdp-disabled-opacity: 0.25;
+  --rdp-outside-opacity: 0.4;
+  --rdp-today-color: var(--primary);
+  font-family: inherit;
+}

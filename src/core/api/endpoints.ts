@@ -1,0 +1,118 @@
+export const endpoints = {
+  auth: {
+    login: '/auth/login',
+    refresh: '/auth/refresh',
+    logout: '/auth/logout',
+    forgotPassword: '/auth/forgot-password',
+    resetPassword: '/auth/reset-password',
+    sessions: '/auth/sessions',
+  },
+  me: {
+    get: '/me',
+    organizations: '/me/organizations',
+  },
+  users: {
+    list: '/users',
+    get: (id: string) => `/users/${id}`,
+    update: (id: string) => `/users/${id}`,
+    delete: (id: string) => `/users/${id}`,
+    invite: '/users/invite',
+    resendInvite: '/users/resend-invite',
+    acceptInvite: '/users/accept-invite',
+    changePassword: '/users/me/change-password',
+    deactivate: (id: string) => `/users/${id}/deactivate`,
+    activate: (id: string) => `/users/${id}/activate`,
+    assignRole: (id: string) => `/users/${id}/role`,
+    profile: (id: string) => `/users/${id}/profile`,
+  },
+  roles: {
+    list: '/roles',
+    get: (id: string) => `/roles/${id}`,
+    create: '/roles',
+    update: (id: string) => `/roles/${id}`,
+    delete: (id: string) => `/roles/${id}`,
+  },
+  organizations: {
+    current: '/organizations/me',
+    update: (id: string) => `/organizations/${id}`,
+  },
+  branches: {
+    list: '/branches',
+    get: (id: string) => `/branches/${id}`,
+    create: '/branches',
+    update: (id: string) => `/branches/${id}`,
+    delete: (id: string) => `/branches/${id}`,
+    commerceConfig: (id: string) => `/branches/${id}/commerce-config`,
+  },
+  subscription: {
+    me: '/subscription/me',
+    plans: '/subscription/plans',
+    events: '/subscription/events',
+    checkout: '/subscription/checkout',
+    confirm: '/subscription/confirm',
+    cancel: '/subscription/cancel',
+    resume: '/subscription/resume',
+    applyCoupon: '/subscription/coupons/apply',
+    enableModule: (code: string) => `/subscription/modules/${code}/enable`,
+    disableModule: (code: string) => `/subscription/modules/${code}/disable`,
+  },
+  billing: {
+    invoices: '/billing/invoices',
+    invoice: (id: string) => `/billing/invoices/${id}`,
+    invoicePdf: (id: string) => `/billing/invoices/${id}/pdf`,
+    paymentMethods: '/billing/payment-methods',
+    deletePaymentMethod: (id: string) => `/billing/payment-methods/${id}`,
+    setDefaultPaymentMethod: (id: string) =>
+      `/billing/payment-methods/${id}/default`,
+  },
+  entitlements: {
+    me: '/entitlements/me',
+  },
+  settings: {
+    list: '/settings/org',
+    set: (key: string) => `/settings/org/${key}`,
+    delete: (key: string) => `/settings/${key}`,
+    branchList: (branchId: string) => `/settings/branch/${branchId}`,
+    branchSet: (branchId: string, key: string) =>
+      `/settings/branch/${branchId}/${key}`,
+  },
+  files: {
+    upload: '/files/upload',
+    get: (id: string) => `/files/${id}`,
+    delete: (id: string) => `/files/${id}`,
+  },
+  notifications: {
+    list: '/notifications',
+    markRead: (id: string) => `/notifications/${id}/read`,
+    markAllRead: '/notifications/read-all',
+  },
+  auditLogs: {
+    list: '/audit-logs',
+  },
+  platformSettings: {
+    get: '/platform-settings',
+  },
+  // Platform-staff operations console (gated server-side by require_platform_staff).
+  // Mounted under /api/v1/platform.
+  platformAdmin: {
+    plans: '/platform/plans',
+    plan: (id: string) => `/platform/plans/${id}`,
+    planFeatures: (id: string) => `/platform/plans/${id}/features`,
+    planFeature: (id: string, code: string) =>
+      `/platform/plans/${id}/features/${code}`,
+    planLimits: (id: string) => `/platform/plans/${id}/limits`,
+    planLimit: (id: string, key: string) =>
+      `/platform/plans/${id}/limits/${key}`,
+    planModules: (id: string) => `/platform/plans/${id}/modules`,
+    planModule: (id: string, code: string) =>
+      `/platform/plans/${id}/modules/${code}`,
+    features: '/platform/features',
+    orgs: '/platform/orgs',
+    org: (id: string) => `/platform/orgs/${id}`,
+    orgEvents: (id: string) => `/platform/orgs/${id}/events`,
+    orgSubComp: (id: string) => `/platform/orgs/${id}/sub/comp`,
+    orgSubExtendTrial: (id: string) => `/platform/orgs/${id}/sub/extend-trial`,
+    orgSubResetTrial: (id: string) => `/platform/orgs/${id}/sub/reset-trial`,
+    orgSubForceCancel: (id: string) => `/platform/orgs/${id}/sub/force-cancel`,
+  },
+} as const
