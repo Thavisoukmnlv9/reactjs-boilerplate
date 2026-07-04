@@ -297,30 +297,41 @@ export const OpeningHoursFormField = React.forwardRef<
         )}
 
         {/* Summary View */}
-        {!isOpen && (
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {DAYS_ORDER.map((day) => {
-                const safeValue = value || {}
-                const timeValue = safeValue[day]
-                const isClosed = !timeValue || timeValue.trim() === ''
-
-                return (
-                  <Badge
-                    key={day}
-                    variant={isClosed ? 'secondary' : 'default'}
-                    className="text-xs"
-                  >
-                    {DAY_SHORT_LABELS[day]}: {isClosed ? 'Closed' : timeValue}
-                  </Badge>
-                )
-              })}
-            </div>
-          </CardContent>
-        )}
+        {!isOpen && <OpeningHoursSummary value={value} />}
       </Card>
     )
   }
 )
 
 OpeningHoursFormField.displayName = 'OpeningHoursFormField'
+
+/**
+ * Collapsed view: one badge per day showing its hours or "Closed".
+ *
+ * NOTE: `closedDays` in the parent is derivable from `value` (a day is closed iff its
+ * value is empty — confirmed by characterization: reopening fills the default rather
+ * than restoring prior hours). It is retained as state only to keep the detail view's
+ * optimistic toggle working for uncontrolled usage; collapsing it to render-time
+ * computation is a safe follow-up once a controlled-cycle test is in place.
+ */
+function OpeningHoursSummary({ value }: { value: OpeningHoursData }) {
+  return (
+    <CardContent>
+      <div className="flex flex-wrap gap-2">
+        {DAYS_ORDER.map((day) => {
+          const timeValue = value[day]
+          const isClosed = !timeValue || timeValue.trim() === ''
+          return (
+            <Badge
+              key={day}
+              variant={isClosed ? 'secondary' : 'default'}
+              className="text-xs"
+            >
+              {DAY_SHORT_LABELS[day]}: {isClosed ? 'Closed' : timeValue}
+            </Badge>
+          )
+        })}
+      </div>
+    </CardContent>
+  )
+}
