@@ -1,16 +1,16 @@
 /**
- * Format a Decimal-style cents value into a localized currency string.
- * Defaults are LAK + lo-LA (matches platform brief). Pass overrides explicitly
- * when the value is bound to a different tenant/branch currency.
+ * Format a minor-unit (cents) value into a localized currency string.
+ * Defaults are USD + en-US. Pass overrides explicitly when the value is bound
+ * to a different tenant/branch currency.
  */
 export function formatCurrency(
   cents: number,
-  currency = 'LAK',
-  locale = 'lo-LA'
+  currency = 'USD',
+  locale = 'en-US'
 ): string {
-  // LAK has no minor units. Force fractionDigits = 0 so we don't render
-  // "₭1,234.56" for an integer kip value coming back from the API.
-  const isZeroFraction = currency === 'LAK' || currency === 'JPY'
+  // Zero-fraction currencies (e.g. JPY) have no minor units — render whole
+  // numbers so we don't show "¥1,234.56" for an integer value from the API.
+  const isZeroFraction = currency === 'JPY'
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,

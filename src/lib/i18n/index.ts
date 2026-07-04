@@ -5,12 +5,12 @@ import { initReactI18next } from 'react-i18next'
 import { appConfig } from '@/config/app-config'
 
 import { en } from './locales/en'
-import { lo } from './locales/lo'
+import { es } from './locales/es'
 
 export const defaultNS = 'common'
 export const namespaces = ['common', 'auth', 'users', 'dashboard'] as const
 
-export const resources = { en, lo } as const
+export const resources = { en, es } as const
 
 void i18n
   .use(LanguageDetector)

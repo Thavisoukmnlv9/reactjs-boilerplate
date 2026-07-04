@@ -168,7 +168,7 @@ export function UserForm({ mode, initial, onSubmit, onCancel, isPending }: Props
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="u-title">Title</Label>
-            <Input id="u-title" value={f.staff_title} onChange={(e) => set('staff_title', e.target.value)} placeholder="e.g. Barista" />
+            <Input id="u-title" value={f.staff_title} onChange={(e) => set('staff_title', e.target.value)} placeholder="e.g. Manager" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="u-note">Notes</Label>

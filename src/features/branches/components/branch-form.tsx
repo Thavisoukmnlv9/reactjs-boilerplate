@@ -8,8 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/shared/components/ui/switch'
 import type { BranchView, BranchWriteInput } from '@/features/branches/api/types'
 
-const CURRENCIES = ['LAK', 'THB', 'USD', 'EUR']
-const VERTICALS = ['FOOD_SERVICE', 'SHOP', 'CLOTHING']
+const CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY']
+const VERTICALS = ['GENERAL', 'RETAIL', 'SERVICE']
 
 interface Props {
   mode: 'create' | 'edit'
@@ -28,9 +28,9 @@ export function BranchForm({ mode, initial, onSubmit, onCancel, isPending }: Pro
     phone: initial?.phone ?? '',
     email: initial?.email ?? '',
     address: initial?.address ?? '',
-    timezone: initial?.timezone ?? 'Asia/Vientiane',
-    currency_code: initial?.currency_code ?? 'LAK',
-    locale: initial?.locale ?? 'lo-LA',
+    timezone: initial?.timezone ?? 'UTC',
+    currency_code: initial?.currency_code ?? 'USD',
+    locale: initial?.locale ?? 'en-US',
     tax_pct: (initial?.tax_rate_bps ?? 0) / 100,
     service_pct: (initial?.service_fee_bps ?? 0) / 100,
     prices_include_tax: initial?.prices_include_tax ?? true,

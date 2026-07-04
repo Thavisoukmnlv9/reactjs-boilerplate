@@ -1,15 +1,13 @@
 import { authStore } from '@/core/auth/auth-store'
 
 /**
- * Role enum used by the customer / loyalty / promotions surface.
- * Higher rank = more capability. OWNER is the highest.
- *
- * Roles are inferred from the permission set returned by `/me`, since
+ * Role enum inferred from the permission set returned by `/me`, since
  * `OrganizationMember.role` is not surfaced directly on the User type.
+ * Higher rank = more capability. OWNER is the highest.
  *
  *  OWNER   — has `platform.organizations.manage`
  *  ADMIN   — has `platform.users.manage` OR `platform.settings.manage`
- *  MANAGER — has any *.manage permission OR `pos_*.manage`
+ *  MANAGER — has any `*.manage` permission
  *  CASHIER — fallback when an authenticated user has none of the above
  */
 export type AppRole = 'OWNER' | 'ADMIN' | 'MANAGER' | 'CASHIER'
@@ -30,14 +28,10 @@ function inferRole(permissions: string[]): AppRole | null {
   ) {
     return 'ADMIN'
   }
-  // Manager-tier: any explicit *.manage permission across verticals
+  // Manager-tier: any explicit *.manage permission across modules
   if (
     permissions.some(
-      (p) =>
-        p.endsWith('.manage') ||
-        p.endsWith('.manage_session') ||
-        p === 'pos_shop.manage' ||
-        p === 'pos_food_service.manage'
+      (p) => p.endsWith('.manage') || p.endsWith('.manage_session')
     )
   ) {
     return 'MANAGER'

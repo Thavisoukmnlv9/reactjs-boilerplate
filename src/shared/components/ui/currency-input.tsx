@@ -5,8 +5,7 @@ import { cn } from '@/core/utils/cn'
 
 const LOCALE_MAP: Record<string, string> = {
   en: 'en-US',
-  lo: 'lo-LA',
-  th: 'th-TH',
+  es: 'es-ES',
 }
 
 function resolveBcp47Locale(): string {

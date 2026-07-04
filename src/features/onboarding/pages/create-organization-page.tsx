@@ -67,7 +67,7 @@ export function CreateOrganizationPage() {
           <div className="space-y-1.5">
             <Label htmlFor="first_branch_name">First branch (optional)</Label>
             <Input id="first_branch_name" placeholder="Main Branch" {...register('first_branch_name')} />
-            <p className="text-muted-foreground text-xs">Defaults to LAK · lo-LA · Asia/Vientiane — editable later.</p>
+            <p className="text-muted-foreground text-xs">Defaults to USD · en-US · UTC — editable later.</p>
           </div>
           <Button type="submit" className="w-full" disabled={create.isPending}>
             {create.isPending ? 'Creating…' : 'Create organization'}

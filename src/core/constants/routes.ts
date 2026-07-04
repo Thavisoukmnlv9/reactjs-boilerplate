@@ -16,11 +16,5 @@ export const ROUTES = {
   ME: '/platform/me',
   NOTIFICATIONS: '/notifications',
   // Modules
-  POS_SHOP: '/pos/shop',
-  POS_FOOD_SERVICE: '/pos/food-service',
-  ECOMMERCE: '/ecommerce',
-  INVENTORY: '/inventory',
-  ADS: '/ads',
-  CHAT: '/chat',
-  REPORTS: '/reports',
+  EXAMPLE: '/example',
 } as const

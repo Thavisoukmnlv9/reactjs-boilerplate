@@ -15,5 +15,5 @@ export const INVOICE_STATUS = {
 export const BRANCH_TYPE = {
   STORE: 'STORE',
   WAREHOUSE: 'WAREHOUSE',
-  FOOD_SERVICE: 'FOOD_SERVICE',
+  OFFICE: 'OFFICE',
 } as const

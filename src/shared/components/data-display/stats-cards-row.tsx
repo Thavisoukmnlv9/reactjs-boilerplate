@@ -38,7 +38,7 @@ export type StatItem = {
   id: string
   /** Card title (top-left). */
   label: React.ReactNode
-  /** Big number (or string like "LAK 12,400"). Falsy values render as "—". */
+  /** Big number (or string like "$12,400"). Falsy values render as "—". */
   value: React.ReactNode
   /** Optional icon in the top-right corner. */
   icon?: React.ReactNode

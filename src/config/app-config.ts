@@ -8,7 +8,7 @@ export const appConfig = {
   name: env.appName,
   description: 'Production-grade modular React + TypeScript boilerplate',
   defaultLocale: 'en',
-  supportedLocales: ['en', 'lo'] as const,
+  supportedLocales: ['en', 'es'] as const,
   api: {
     baseUrl: env.apiBaseUrl,
     timeout: 30_000,

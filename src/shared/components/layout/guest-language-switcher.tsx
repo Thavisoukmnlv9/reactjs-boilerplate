@@ -18,10 +18,7 @@ interface LangChoice {
 
 const CHOICES: LangChoice[] = [
   { i18nCode: 'en', label: 'English' },
-  { i18nCode: 'lo', label: 'ລາວ (Lao)' },
-  { i18nCode: 'th', label: 'ไทย (Thai)' },
-  { i18nCode: 'zh', label: '中文 (Chinese)' },
-  { i18nCode: 'vi', label: 'Tiếng Việt (Vietnamese)' },
+  { i18nCode: 'es', label: 'Español' },
 ]
 
 /**

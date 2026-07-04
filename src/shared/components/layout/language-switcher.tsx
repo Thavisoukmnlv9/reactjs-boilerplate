@@ -19,17 +19,14 @@ import {
 interface LangChoice {
   /** BCP-47 tag stored on the server (e.g. 'en-US'). */
   tag: string
-  /** Short i18next code used by `i18n.changeLanguage` ('en', 'lo', 'th'). */
+  /** Short i18next code used by `i18n.changeLanguage` ('en', 'es'). */
   i18nCode: SupportedLang
   label: string
 }
 
 const CHOICES: LangChoice[] = [
   { tag: 'en-US', i18nCode: 'en', label: 'English' },
-  { tag: 'lo-LA', i18nCode: 'lo', label: 'ລາວ (Lao)' },
-  { tag: 'th-TH', i18nCode: 'th', label: 'ไทย (Thai)' },
-  { tag: 'zh-CN', i18nCode: 'zh', label: '中文 (Chinese)' },
-  { tag: 'vi-VN', i18nCode: 'vi', label: 'Tiếng Việt (Vietnamese)' },
+  { tag: 'es-ES', i18nCode: 'es', label: 'Español' },
 ]
 
 function tagToI18nCode(tag: string): string {

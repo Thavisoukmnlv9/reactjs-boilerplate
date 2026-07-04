@@ -21,7 +21,7 @@ export interface SidebarItem {
 
 export interface ModuleNavLink {
   kind?: 'link'
-  /** i18n key (e.g. `sidebar.posShop.products`). */
+  /** i18n key (e.g. `sidebar.example.items`). */
   label: string
   path: string
   icon?: string
@@ -48,179 +48,41 @@ export const isModuleNavLink = (
 ): child is ModuleNavLink => child.kind !== 'group'
 
 export const moduleNavDefaultOpen: Partial<Record<ModuleCode, boolean>> = {
-  // pos_shop: false,
-  pos_food_service: true,
-  // pos_clothing: false,
+  example: true,
 }
 
 export const moduleNavChildren: Partial<Record<ModuleCode, ModuleNavChild[]>> =
   {
-    pos_food_service: [
+    example: [
       { kind: 'group', label: 'sidebar.group.overview', icon: 'Gauge' },
       {
-        label: 'sidebar.posFoodService.dashboard',
-        path: '/pos/food-service/',
+        label: 'sidebar.example.dashboard',
+        path: '/example/',
         icon: 'LayoutDashboard',
         matchExact: true,
-        permission: 'pos_food_service.dashboard',
+        permission: 'example.view',
       },
       {
-        label: 'sidebar.posFoodService.reports',
-        path: '/pos/food-service/reports/',
-        icon: 'BarChart3',
-        permission: 'pos_food_service.reports',
-      },
-
-      { kind: 'group', label: 'sidebar.group.operations', icon: 'Activity' },
-      {
-        label: 'sidebar.posFoodService.orders',
-        path: '/pos/food-service/orders/',
+        label: 'sidebar.example.items',
+        path: '/example/items/',
         icon: 'ClipboardList',
-        permission: 'pos_food_service.orders',
+        permission: 'example.view',
       },
       {
-        label: 'sidebar.posFoodService.tables',
-        path: '/pos/food-service/tables/',
-        icon: 'Armchair',
-        permission: 'pos_food_service.tables',
+        label: 'sidebar.example.reports',
+        path: '/example/reports/',
+        icon: 'BarChart3',
+        permission: 'example.reports',
       },
-      {
-        label: 'sidebar.posFoodService.reservations',
-        path: '/pos/food-service/reservations/',
-        icon: 'CalendarCheck',
-        permission: 'pos_food_service.reservations',
-      },
-
-      { kind: 'group', label: 'sidebar.group.menu', icon: 'BookOpen' },
-      {
-        label: 'sidebar.posFoodService.menu',
-        path: '/pos/food-service/menu/',
-        icon: 'BookOpen',
-        permission: 'pos_food_service.menu',
-      },
-      {
-        label: 'sidebar.posFoodService.products',
-        path: '/pos/food-service/products/',
-        icon: 'Coffee',
-        permission: 'pos_food_service.products',
-      },
-      {
-        label: 'sidebar.posFoodService.categories',
-        path: '/pos/food-service/categories/',
-        icon: 'FolderTree',
-        permission: 'pos_food_service.categories',
-      },
-      {
-        label: 'sidebar.posFoodService.promotions',
-        path: '/pos/food-service/promotions/',
-        icon: 'BadgePercent',
-        permission: 'pos_food_service.promotions',
-      },
-      {
-        label: 'sidebar.posFoodService.combos',
-        path: '/pos/food-service/combos/',
-        icon: 'Package',
-        permission: 'pos_food_service.combos',
-      },
-
-      { kind: 'group', label: 'sidebar.group.inventory', icon: 'Warehouse' },
-      {
-        label: 'sidebar.posFoodService.inventories',
-        path: '/pos/food-service/inventories/',
-        icon: 'Boxes',
-        permission: 'pos_food_service.inventory',
-      },
-      {
-        label: 'sidebar.posFoodService.stockTransfers',
-        path: '/pos/food-service/stock-transfers/',
-        icon: 'ArrowLeftRight',
-        permission: 'pos_food_service.stock_transfers',
-      },
-      {
-        label: 'sidebar.posFoodService.suppliers',
-        path: '/pos/food-service/suppliers/',
-        icon: 'Truck',
-        permission: 'pos_food_service.suppliers',
-      },
-      { kind: 'group', label: 'sidebar.group.people', icon: 'Users' },
-      {
-        label: 'sidebar.posFoodService.customers',
-        path: '/pos/food-service/customers/',
-        icon: 'Users',
-        permission: 'pos_food_service.customers',
-      },
-      {
-        label: 'sidebar.posFoodService.shifts',
-        path: '/pos/food-service/shifts/',
-        icon: 'CalendarDays',
-        permission: 'pos_food_service.shifts',
-      },
-      {
-        label: 'sidebar.posFoodService.timeClock',
-        path: '/pos/food-service/time-clock/',
-        icon: 'Clock',
-        permission: 'pos_food_service.time_clock',
-      },
-      // {
-      //   label: 'sidebar.posFoodService.staff',
-      //   path: '/pos/food-service/staff/',
-      //   icon: 'UserCog',
-      //   permission: 'pos_food_service.staff',
-      // },
 
       { kind: 'group', label: 'sidebar.group.setup', icon: 'Settings' },
       {
-        label: 'sidebar.posFoodService.branches',
-        path: '/pos/food-service/branches/',
-        icon: 'MapPin',
-        // Food-service branches reuse the shop branch surface (shared clone),
-        // so the page guards on pos_shop.branches — gate the nav to match.
-        permission: 'pos_shop.branches',
-      },
-      {
-        label: 'sidebar.posFoodService.billConfig',
-        path: '/pos/food-service/bill-config/',
-        icon: 'ReceiptText',
-        permission: 'pos_food_service.bill_config',
-      },
-      {
-        label: 'sidebar.posFoodService.measurementUnits',
-        path: '/pos/food-service/measurement-units/',
-        icon: 'Ruler',
-        permission: 'pos_food_service.measurement_units',
-      },
-      {
-        label: 'sidebar.posFoodService.paymentMethods',
-        path: '/pos/food-service/payment-methods/',
-        icon: 'CreditCard',
-        permission: 'pos_food_service.payment_methods',
-      },
-      {
-        label: 'sidebar.posFoodService.devices',
-        path: '/pos/food-service/devices/',
-        icon: 'Monitor',
-        permission: 'pos_food_service.devices',
-      },
-      {
-        label: 'sidebar.posFoodService.tax',
-        path: '/pos/food-service/tax/',
-        icon: 'Percent',
-        permission: 'pos_food_service.tax',
-      },
-      {
-        label: 'sidebar.posFoodService.tips',
-        path: '/pos/food-service/tips/',
-        icon: 'HandCoins',
-        permission: 'pos_food_service.tips',
-      },
-      {
-        label: 'sidebar.posFoodService.audit',
-        path: '/pos/food-service/audit/',
-        icon: 'ScrollText',
-        permission: 'pos_food_service.audit',
+        label: 'sidebar.example.settings',
+        path: '/example/settings/',
+        icon: 'SlidersHorizontal',
+        permission: 'example.manage',
       },
     ],
-   
   }
 
 export const platformItems: SidebarItem[] = [
@@ -238,16 +100,14 @@ export const platformItems: SidebarItem[] = [
     icon: 'Shield',
     permission: 'platform.roles.read',
   },
-  
 ]
 
 export const moduleNavOrder: Partial<Record<ModuleCode, number>> = {
-  pos_food_service: 1,
+  example: 1,
 }
 
-
 export const moduleLabelKeys: Partial<Record<ModuleCode, string>> = {
-  pos_food_service: 'sidebar.module.posFoodService',
+  example: 'sidebar.module.example',
 }
 
 export const moduleItems: SidebarItem[] = MODULES.filter((m) =>
