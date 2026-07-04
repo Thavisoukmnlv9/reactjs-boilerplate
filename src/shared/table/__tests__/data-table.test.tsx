@@ -128,11 +128,10 @@ describe('data-table controlled-state effects', () => {
 // Latent bugs — CURRENT (buggy) behavior encoded here so a reviewer sees intent.
 // The B1 bugfix commits flip these assertions and fix the code.
 // ---------------------------------------------------------------------------
-describe('data-table latent bugs (characterization of current behavior)', () => {
-  it('BUG(pageCount): an empty table still renders page navigation (pageCount computes to 10)', () => {
+describe('data-table bug regression guards', () => {
+  it('pageCount: an empty table renders no page navigation (pageCount = 0, not 10)', () => {
     render(<DataTable columns={[nameCol]} data={[]} totalCount={0} />)
-    // sr-only nav labels render as i18n keys; their presence means the (buggy) page nav rendered.
-    expect(screen.queryByText('dataTable.nextPage')).toBeInTheDocument()
+    expect(screen.queryByText('dataTable.nextPage')).not.toBeInTheDocument()
   })
 
   it('BUG(keyboard): pressing Enter on a sort header toggles twice (ends descending)', async () => {

@@ -221,7 +221,7 @@ export function DataTable<TData, TValue>({
     pageSize,
   })
 
-  const pageCount = Math.ceil(totalCount / Number(pageSize) || 10)
+  const pageCount = Math.ceil(totalCount / (Number(pageSize) || 10))
 
   // Controlled state changes
   React.useEffect(() => {
