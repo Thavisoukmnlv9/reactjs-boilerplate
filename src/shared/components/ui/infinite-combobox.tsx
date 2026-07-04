@@ -1,4 +1,3 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Check, ChevronsUpDown, Loader2, Search, X } from 'lucide-react'
 import React, { useRef } from 'react'
@@ -23,6 +22,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/shared/components/ui/tooltip'
+import { useInfiniteComboboxData } from './use-infinite-combobox-data'
 
 interface InfiniteComboboxProps<T> {
   queryKey: Array<string>
@@ -81,34 +81,21 @@ export function InfiniteCombobox<T>({
     500
   )
 
-  const { data: selectedItem } = useQuery({
-    queryKey: [...queryKey, 'preload', value],
-    queryFn: () => preloadQueryFn(value),
-    enabled: !!value,
-    staleTime: Number.POSITIVE_INFINITY,
+  const {
+    mergedItems,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetching,
+  } = useInfiniteComboboxData({
+    queryKey,
+    queryFn,
+    preloadQueryFn,
+    getValue,
+    value,
+    search,
+    open,
   })
-
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isFetching } =
-    useInfiniteQuery({
-      queryKey: [...queryKey, search],
-      queryFn: ({ pageParam = 1 }) => queryFn({ search, pageParam }),
-      getNextPageParam: (lastPage) => lastPage.nextPage,
-      initialPageParam: 1,
-      enabled: open,
-      refetchOnWindowFocus: false,
-      staleTime: 0,
-    })
-
-  const items = data ? data.pages.flatMap((page) => page.items) : []
-
-  const mergedItems = React.useMemo(() => {
-    if (!value) return items
-    const exists = items.some((item) => getValue(item) === value)
-    if (!exists && selectedItem) {
-      return [selectedItem, ...items]
-    }
-    return items
-  }, [items, value, selectedItem, getValue])
 
   React.useEffect(() => {
     if (open) {
