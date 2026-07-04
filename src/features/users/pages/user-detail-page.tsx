@@ -1,57 +1,50 @@
-import { ArrowLeft } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
-import { Link, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from '@tanstack/react-router'
+import { toast } from 'sonner'
 
-import { ErrorState } from '@/components/common/error-state'
-import { LoadingState } from '@/components/common/loading-state'
 import { PageHeader } from '@/components/common/page-header'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ROUTES } from '@/config/constants'
-import { formatDateTime } from '@/lib/utils'
-
-import { useUser } from '../api/queries'
+import { useUpdateUser } from '@/features/users/api/mutations'
+import { useUserQuery } from '@/features/users/api/queries'
+import { UserForm } from '@/features/users/components/user-form'
 
 export function UserDetailPage() {
-  const { t } = useTranslation('users')
-  const { id = '' } = useParams()
-  const { data: user, isLoading, isError, error, refetch } = useUser(id)
+  const { memberId } = useParams({ strict: false }) as { memberId?: string }
+  const navigate = useNavigate()
+  const { data: member, isLoading } = useUserQuery(memberId)
+  const update = useUpdateUser()
 
-  if (isLoading) return <LoadingState />
-  if (isError || !user) {
-    return (
-      <ErrorState
-        message={error instanceof Error ? error.message : undefined}
-        onRetry={() => void refetch()}
-      />
-    )
-  }
+  if (isLoading || !member) return <p className="text-muted-foreground text-sm">Loading…</p>
 
   return (
-    <div className="space-y-6">
-      <Button asChild variant="ghost" size="sm">
-        <Link to={ROUTES.users}>
-          <ArrowLeft className="size-4" />
-          {t('title')}
-        </Link>
-      </Button>
-      <PageHeader title={user.name} description={user.email} />
-      <Card>
-        <CardHeader>
-          <CardTitle>Details</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 text-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">{t('columns.role')}</span>
-            <Badge variant="secondary">{user.role}</Badge>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">{t('columns.createdAt')}</span>
-            <span>{formatDateTime(user.createdAt)}</span>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="mx-auto max-w-3xl space-y-6 pb-10">
+      <PageHeader
+        title={member.user.name ?? member.user.email ?? 'Member'}
+        description={member.status === 'PENDING' ? 'Invite pending — not yet accepted.' : undefined}
+      />
+      <UserForm
+        mode="edit"
+        initial={member}
+        isPending={update.isPending}
+        onCancel={() => void navigate({ to: '/users' })}
+        onSubmit={async (v) => {
+          try {
+            await update.mutateAsync({
+              id: member.id,
+              data: {
+                name: v.name.trim() || undefined,
+                role_id: v.role_id,
+                branch_ids: v.branch_ids,
+                default_branch_id: v.default_branch_id || null,
+                staff_title: v.staff_title.trim() || null,
+                staff_note: v.staff_note.trim() || null,
+              },
+            })
+            toast.success('Member updated')
+            void navigate({ to: '/users' })
+          } catch (e) {
+            toast.error((e as Error).message)
+          }
+        }}
+      />
     </div>
   )
 }

@@ -1,57 +1,21 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
+import { useQuery } from '@tanstack/react-query'
 
-import type { UserFormValues } from '../schema'
-import type { UsersQuery } from '../types'
+import { apiClient } from '@/core/api/api-client'
+import { endpoints } from '@/core/api/endpoints'
 
-import { usersKeys } from './query-keys'
-import { createUser, deleteUser, getUser, listUsers, updateUser } from './users-api'
+import { userKeys, type MemberView, type Paginated } from './types'
 
-export function useUsers(query: UsersQuery = {}) {
+export function useUsersQuery() {
   return useQuery({
-    queryKey: usersKeys.list(query),
-    queryFn: () => listUsers(query),
+    queryKey: userKeys.all,
+    queryFn: () => apiClient.get<Paginated<MemberView>>(`${endpoints.users.list}?limit=100`),
   })
 }
 
-export function useUser(id: string) {
+export function useUserQuery(id: string | undefined) {
   return useQuery({
-    queryKey: usersKeys.detail(id),
-    queryFn: () => getUser(id),
-    enabled: Boolean(id),
-  })
-}
-
-export function useCreateUser() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (input: UserFormValues) => createUser(input),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: usersKeys.lists() })
-      toast.success('User created')
-    },
-  })
-}
-
-export function useUpdateUser(id: string) {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (input: UserFormValues) => updateUser(id, input),
-    onSuccess: (user) => {
-      void queryClient.invalidateQueries({ queryKey: usersKeys.lists() })
-      queryClient.setQueryData(usersKeys.detail(id), user)
-      toast.success('User updated')
-    },
-  })
-}
-
-export function useDeleteUser() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (id: string) => deleteUser(id),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: usersKeys.lists() })
-      toast.success('User deleted')
-    },
+    queryKey: userKeys.one(id ?? ''),
+    queryFn: () => apiClient.get<MemberView>(endpoints.users.get(id ?? '')),
+    enabled: !!id,
   })
 }

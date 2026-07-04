@@ -22,6 +22,20 @@ import { ResetPasswordPage } from '@/features/auth/pages/reset-password-page'
 import { AcceptInvitePage } from '@/features/auth/pages/accept-invite-page'
 import { CreateOrganizationPage } from '@/features/onboarding/pages/create-organization-page'
 import { DashboardPage } from '@/features/dashboard/pages/dashboard-page'
+import { PERMISSIONS } from '@/core/constants/permissions'
+import { RolesPage } from '@/features/roles/pages/roles-page'
+import { RoleCreatePage } from '@/features/roles/pages/role-create-page'
+import { RoleDetailPage } from '@/features/roles/pages/role-detail-page'
+import { RoleEditPage } from '@/features/roles/pages/role-edit-page'
+import { BranchesPage } from '@/features/branches/pages/branches-page'
+import { BranchCreatePage } from '@/features/branches/pages/branch-create-page'
+import { BranchEditPage } from '@/features/branches/pages/branch-edit-page'
+import { PoliciesPage } from '@/features/policies/pages/policies-page'
+import { PolicyCreatePage } from '@/features/policies/pages/policy-create-page'
+import { PolicyEditPage } from '@/features/policies/pages/policy-edit-page'
+import { UsersPage } from '@/features/users/pages/users-page'
+import { UserCreatePage } from '@/features/users/pages/user-create-page'
+import { UserDetailPage } from '@/features/users/pages/user-detail-page'
 
 export interface RouterContext {
   queryClient: QueryClient
@@ -114,11 +128,48 @@ export const appRoute = createRoute({
 })
 const dashboardRoute = createRoute({ getParentRoute: () => appRoute, path: '/dashboard', component: DashboardPage })
 
+// ── Roles ───────────────────────────────────────────────────────────────────
+const rolesRoute = createRoute({ getParentRoute: () => appRoute, path: '/roles', staticData: { permission: PERMISSIONS.ROLES_READ }, component: RolesPage })
+const roleNewRoute = createRoute({ getParentRoute: () => appRoute, path: '/roles/new', staticData: { permission: PERMISSIONS.ROLES_MANAGE }, component: RoleCreatePage })
+const roleDetailRoute = createRoute({ getParentRoute: () => appRoute, path: '/roles/$roleId', staticData: { permission: PERMISSIONS.ROLES_READ }, component: RoleDetailPage })
+const roleEditRoute = createRoute({ getParentRoute: () => appRoute, path: '/roles/$roleId/edit', staticData: { permission: PERMISSIONS.ROLES_MANAGE }, component: RoleEditPage })
+
+// ── Branches ────────────────────────────────────────────────────────────────
+const branchesRoute = createRoute({ getParentRoute: () => appRoute, path: '/branches', staticData: { permission: PERMISSIONS.BRANCHES_READ }, component: BranchesPage })
+const branchNewRoute = createRoute({ getParentRoute: () => appRoute, path: '/branches/new', staticData: { permission: PERMISSIONS.BRANCHES_MANAGE }, component: BranchCreatePage })
+const branchEditRoute = createRoute({ getParentRoute: () => appRoute, path: '/branches/$branchId/edit', staticData: { permission: PERMISSIONS.BRANCHES_MANAGE }, component: BranchEditPage })
+
+// ── Policies ────────────────────────────────────────────────────────────────
+const policiesRoute = createRoute({ getParentRoute: () => appRoute, path: '/policies', staticData: { permission: PERMISSIONS.POLICIES_READ }, component: PoliciesPage })
+const policyNewRoute = createRoute({ getParentRoute: () => appRoute, path: '/policies/new', staticData: { permission: PERMISSIONS.POLICIES_MANAGE }, component: PolicyCreatePage })
+const policyEditRoute = createRoute({ getParentRoute: () => appRoute, path: '/policies/$policyId/edit', staticData: { permission: PERMISSIONS.POLICIES_MANAGE }, component: PolicyEditPage })
+
+// ── Users ───────────────────────────────────────────────────────────────────
+const usersRoute = createRoute({ getParentRoute: () => appRoute, path: '/users', staticData: { permission: PERMISSIONS.USERS_READ }, component: UsersPage })
+const userNewRoute = createRoute({ getParentRoute: () => appRoute, path: '/users/new', staticData: { permission: PERMISSIONS.USERS_INVITE }, component: UserCreatePage })
+const userDetailRoute = createRoute({ getParentRoute: () => appRoute, path: '/users/$memberId', staticData: { permission: PERMISSIONS.USERS_READ }, component: UserDetailPage })
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   guestRoute.addChildren([loginRoute, registerRoute, forgotRoute, resetRoute, acceptInviteRoute]),
   onboardingRoute.addChildren([createOrgRoute]),
-  appRoute.addChildren([dashboardRoute, ...appFeatureRoutes()]),
+  appRoute.addChildren([
+    dashboardRoute,
+    rolesRoute,
+    roleNewRoute,
+    roleDetailRoute,
+    roleEditRoute,
+    branchesRoute,
+    branchNewRoute,
+    branchEditRoute,
+    policiesRoute,
+    policyNewRoute,
+    policyEditRoute,
+    usersRoute,
+    userNewRoute,
+    userDetailRoute,
+    ...appFeatureRoutes(),
+  ]),
 ])
 
 export const router = createRouter({
