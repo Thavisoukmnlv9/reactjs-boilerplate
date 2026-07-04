@@ -37,15 +37,20 @@ import { MobileCardListCustom } from '@/shared/table/mobile-card-list-custom'
 import { DataTablePagination } from './data-table-pagination'
 
 // Utility functions for creating columns
-export function createSortableColumn<TData>(
+interface ColumnFactoryOptions<TData> {
+  size?: number
+  cell?: (props: {
+    row: { getValue: (key: string) => unknown; original: TData }
+  }) => React.ReactNode
+}
+
+// Shared core for the accessor-based column factories. They differ only in their
+// sorting/filtering flags, so each wraps this with those set.
+function makeAccessorColumn<TData>(
   accessorKey: keyof TData,
   header: string,
-  options: {
-    size?: number
-    cell?: (props: {
-      row: { getValue: (key: string) => unknown; original: TData }
-    }) => React.ReactNode
-  } = {}
+  options: ColumnFactoryOptions<TData>,
+  flags: { enableSorting: boolean; enableColumnFilter: boolean }
 ): ColumnDef<TData, unknown> {
   return {
     accessorKey: accessorKey as string,
@@ -54,53 +59,44 @@ export function createSortableColumn<TData>(
     cell:
       options.cell ||
       (({ row }) => <div>{String(row.getValue(accessorKey as string))}</div>),
+    enableSorting: flags.enableSorting,
+    enableColumnFilter: flags.enableColumnFilter,
+  }
+}
+
+export function createSortableColumn<TData>(
+  accessorKey: keyof TData,
+  header: string,
+  options: ColumnFactoryOptions<TData> = {}
+): ColumnDef<TData, unknown> {
+  return makeAccessorColumn(accessorKey, header, options, {
     enableSorting: true,
     enableColumnFilter: false,
-  }
+  })
 }
 
 export function createFilterableColumn<TData>(
   accessorKey: keyof TData,
   header: string,
-  options: {
-    size?: number
-    cell?: (props: {
-      row: { getValue: (key: string) => unknown; original: TData }
-    }) => React.ReactNode
-  } = {}
+  options: ColumnFactoryOptions<TData> = {}
 ): ColumnDef<TData, unknown> {
-  return {
-    accessorKey: accessorKey as string,
-    header,
-    size: options.size,
-    cell:
-      options.cell ||
-      (({ row }) => <div>{String(row.getValue(accessorKey as string))}</div>),
+  return makeAccessorColumn(accessorKey, header, options, {
     enableSorting: false,
     enableColumnFilter: true,
-  }
+  })
 }
 
+// NOTE: historical name — this is a sortable + filterable column, unrelated to row
+// selection. Kept for backwards compatibility.
 export function createSelectableColumn<TData>(
   accessorKey: keyof TData,
   header: string,
-  options: {
-    size?: number
-    cell?: (props: {
-      row: { getValue: (key: string) => unknown; original: TData }
-    }) => React.ReactNode
-  } = {}
+  options: ColumnFactoryOptions<TData> = {}
 ): ColumnDef<TData, unknown> {
-  return {
-    accessorKey: accessorKey as string,
-    header,
-    size: options.size,
-    cell:
-      options.cell ||
-      (({ row }) => <div>{String(row.getValue(accessorKey as string))}</div>),
+  return makeAccessorColumn(accessorKey, header, options, {
     enableSorting: true,
     enableColumnFilter: true,
-  }
+  })
 }
 
 export function createExpandableColumn<TData>(
