@@ -134,7 +134,7 @@ describe('data-table bug regression guards', () => {
     expect(screen.queryByText('dataTable.nextPage')).not.toBeInTheDocument()
   })
 
-  it('BUG(keyboard): pressing Enter on a sort header toggles twice (ends descending)', async () => {
+  it('keyboard: pressing Enter on a sort header toggles once (ascending, like a single click)', async () => {
     const user = userEvent.setup()
     const onSortingChange = vi.fn()
     render(
@@ -150,6 +150,6 @@ describe('data-table bug regression guards', () => {
     onSortingChange.mockClear()
     await user.keyboard('{Enter}')
     const last = onSortingChange.mock.calls.at(-1)?.[0] as Array<{ id: string; desc: boolean }>
-    expect(last?.[0]).toMatchObject({ id: 'name', desc: true })
+    expect(last?.[0]).toMatchObject({ id: 'name', desc: false })
   })
 })

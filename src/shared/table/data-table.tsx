@@ -345,13 +345,6 @@ export function DataTable<TData, TValue>({
                                   type="button"
                                   className="flex items-center gap-2 rounded px-2 py-1 transition-colors hover:bg-muted/50"
                                   onClick={header.column.getToggleSortingHandler()}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                      header.column.getToggleSortingHandler()?.(
-                                        e
-                                      )
-                                    }
-                                  }}
                                 >
                                   {typeof header.column.columnDef.header ===
                                   'function'
