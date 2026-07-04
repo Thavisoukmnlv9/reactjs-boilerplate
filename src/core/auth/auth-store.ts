@@ -35,7 +35,7 @@ interface AuthState {
   isLoading: boolean
   setAuth: (
     user: User,
-    org: Organization,
+    org: Organization | null,
     permissions: string[],
     entitlements: AuthState['entitlements']
   ) => void

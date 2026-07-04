@@ -9,10 +9,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      // Vendored src/shared imports @tanstack/react-router; map it to our shim.
-      '@tanstack/react-router': fileURLToPath(
-        new URL('./src/core/compat/tanstack-router.tsx', import.meta.url),
-      ),
     },
   },
   server: {
@@ -35,8 +31,7 @@ export default defineConfig({
       output: {
         manualChunks: (id: string) => {
           if (!id.includes('node_modules')) return
-          if (id.includes('react-router')) return 'router-vendor'
-          if (id.includes('@tanstack')) return 'query-vendor'
+          if (id.includes('@tanstack')) return 'tanstack-vendor'
           if (id.includes('react-hook-form') || id.includes('@hookform') || id.includes('zod'))
             return 'form-vendor'
           if (id.includes('react')) return 'react-vendor'

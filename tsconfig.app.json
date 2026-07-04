@@ -26,8 +26,7 @@
 
     /* Paths (resolved relative to this tsconfig; no baseUrl needed) */
     "paths": {
-      "@/*": ["./src/*"],
-      "@tanstack/react-router": ["./src/core/compat/tanstack-router.tsx"]
+      "@/*": ["./src/*"]
     },
     "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"]
   },

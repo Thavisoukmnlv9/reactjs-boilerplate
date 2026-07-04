@@ -27,13 +27,24 @@ export interface MeBranch {
   is_default: boolean
 }
 
+/** A compact stored ABAC policy, shipped by /me so the client can mirror can(). */
+export interface MePolicy {
+  effect: 'ALLOW' | 'DENY'
+  action: string
+  subject: string
+  conditions: unknown | null
+  role_id: string | null
+}
+
 export interface MeResponse {
   user: User
-  organization: Organization
+  /** Null for an org-less user (freshly registered / platform staff) → route to onboarding. */
+  organization: Organization | null
   permissions: string[]
   /** Branches the member may operate; drives branch pickers/filters. */
   branches: MeBranch[]
   /** The member's preferred branch among `branches`, if any. */
   default_branch_id: string | null
+  policies: MePolicy[]
   entitlements: { modules: string[]; limits: Record<string, number> }
 }

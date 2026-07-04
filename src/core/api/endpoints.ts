@@ -1,6 +1,8 @@
 export const endpoints = {
   auth: {
     login: '/auth/login',
+    register: '/auth/register',
+    acceptInvite: '/auth/accept-invite',
     refresh: '/auth/refresh',
     logout: '/auth/logout',
     forgotPassword: '/auth/forgot-password',
@@ -16,9 +18,10 @@ export const endpoints = {
     get: (id: string) => `/users/${id}`,
     update: (id: string) => `/users/${id}`,
     delete: (id: string) => `/users/${id}`,
-    invite: '/users/invite',
-    resendInvite: '/users/resend-invite',
-    acceptInvite: '/users/accept-invite',
+    create: '/users',
+    invite: '/users',
+    resendInvite: (id: string) => `/users/${id}/resend-invite`,
+    acceptInvite: '/auth/accept-invite',
     changePassword: '/users/me/change-password',
     deactivate: (id: string) => `/users/${id}/deactivate`,
     activate: (id: string) => `/users/${id}/activate`,
@@ -33,8 +36,16 @@ export const endpoints = {
     delete: (id: string) => `/roles/${id}`,
   },
   organizations: {
-    current: '/organizations/me',
+    current: '/organizations/current',
+    create: '/organizations',
     update: (id: string) => `/organizations/${id}`,
+  },
+  policies: {
+    list: '/policies',
+    get: (id: string) => `/policies/${id}`,
+    create: '/policies',
+    update: (id: string) => `/policies/${id}`,
+    delete: (id: string) => `/policies/${id}`,
   },
   branches: {
     list: '/branches',

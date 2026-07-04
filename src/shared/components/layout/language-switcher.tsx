@@ -68,7 +68,7 @@ export function LanguageSwitcher() {
   function pick(choice: LangChoice) {
     navigate({
       to: '.',
-      search: (prev) => ({ ...prev, lang: choice.i18nCode }),
+      search: (prev: Record<string, unknown>) => ({ ...prev, lang: choice.i18nCode }),
       replace: true,
     })
     update.mutate({ locale: choice.tag } satisfies Partial<MePreferences>)

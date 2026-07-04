@@ -2,13 +2,13 @@ import { DollarSign, ShoppingCart, TrendingDown, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { PageHeader } from '@/components/common/page-header'
-import { useAuth } from '@/hooks/use-auth'
+import { authStore } from '@/core/access'
 
 import { StatCard } from '../components/stat-card'
 
 export function DashboardPage() {
   const { t } = useTranslation('dashboard')
-  const { user } = useAuth()
+  const user = authStore((s) => s.user)
 
   return (
     <div className="space-y-6">
