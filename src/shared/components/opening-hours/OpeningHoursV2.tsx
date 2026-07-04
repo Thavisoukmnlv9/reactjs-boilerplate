@@ -4,21 +4,24 @@ import { cn } from '@/core/utils/cn'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Switch } from '../ui/switch'
+import type {
+  OpeningHoursDayValue,
+  OpeningHoursSchedule,
+  OpeningHoursScheduleInput,
+} from './opening-hours-utils'
+import {
+  defaultDaySchedule,
+  formatDayLabel,
+  isValidClockTime,
+  normalizeSchedule,
+} from './opening-hours-utils'
 import { TimePicker } from './TimePicker'
 
-export interface OpeningHoursDayValue {
-  open: string
-  close: string
-  is_closed: boolean
-}
-
-export type OpeningHoursSchedule = Record<string, OpeningHoursDayValue>
-
-/** Value accepted from form/API (open/close optional when closed) */
-export type OpeningHoursScheduleInput = Record<
-  string,
-  Partial<OpeningHoursDayValue> & { is_closed?: boolean }
->
+export type {
+  OpeningHoursDayValue,
+  OpeningHoursSchedule,
+  OpeningHoursScheduleInput,
+} from './opening-hours-utils'
 
 export interface OpeningHoursV2Props {
   /** Day keys to display (e.g. ["mon", "tue", "wed"]) */
@@ -35,20 +38,6 @@ export interface OpeningHoursV2Props {
   defaultClose?: string
   /** Show quick actions (Open all / Close all / Apply to open days) */
   showQuickActions?: boolean
-}
-
-const defaultDaySchedule = (
-  open = '10:00',
-  close = '21:00'
-): OpeningHoursDayValue => ({
-  open,
-  close,
-  is_closed: false,
-})
-
-function formatDayLabel(day: string): string {
-  const d = day.slice(0, 3)
-  return d.charAt(0).toUpperCase() + d.slice(1)
 }
 
 export const OpeningHoursV2 = React.forwardRef<
@@ -73,20 +62,10 @@ export const OpeningHoursV2 = React.forwardRef<
     const [quickOpen, setQuickOpen] = React.useState(defaultOpen)
     const [quickClose, setQuickClose] = React.useState(defaultClose)
 
-    const schedule = React.useMemo(() => {
-      const next: OpeningHoursSchedule = {}
-      days.forEach((day) => {
-        next[day] =
-          value[day] != null
-            ? {
-                open: value[day].open ?? defaultOpen,
-                close: value[day].close ?? defaultClose,
-                is_closed: value[day].is_closed ?? false,
-              }
-            : defaultDaySchedule(defaultOpen, defaultClose)
-      })
-      return next
-    }, [days, value, defaultOpen, defaultClose])
+    const schedule = React.useMemo(
+      () => normalizeSchedule(days, value, defaultOpen, defaultClose),
+      [days, value, defaultOpen, defaultClose]
+    )
 
     const updateDay = React.useCallback(
       (day: string, patch: Partial<OpeningHoursDayValue>) => {
@@ -122,11 +101,9 @@ export const OpeningHoursV2 = React.forwardRef<
     const applyToOpenDays = React.useCallback(() => {
       if (!onChange) return
       const openTime =
-        quickOpen && /^\d{1,2}:\d{2}$/.test(quickOpen) ? quickOpen : defaultOpen
+        quickOpen && isValidClockTime(quickOpen) ? quickOpen : defaultOpen
       const closeTime =
-        quickClose && /^\d{1,2}:\d{2}$/.test(quickClose)
-          ? quickClose
-          : defaultClose
+        quickClose && isValidClockTime(quickClose) ? quickClose : defaultClose
       const next: OpeningHoursSchedule = {}
       days.forEach((day) => {
         const current = schedule[day]

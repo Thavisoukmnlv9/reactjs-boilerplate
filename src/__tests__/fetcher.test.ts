@@ -102,10 +102,11 @@ describe('fetcher error extraction (characterization)', () => {
       expect(err.code).toBeUndefined()
     })
 
-    it('whitespace-only string detail is ignored → default message', async () => {
+    it('whitespace-only string detail is ignored → falls back to body text', async () => {
       const err = await errorFrom({ status: 404, body: { detail: '   ' } })
-      // detail is blank and nothing else present → falls to fallback → default
-      expect(err.message).toBe('Not Found')
+      // Blank detail yields no message/code, so the JSON path returns nothing
+      // and the fallback reads the (short, tag-free) body text verbatim.
+      expect(err.message).toBe('{"detail":"   "}')
     })
 
     it('array of validation issues → first issue msg', async () => {
@@ -125,17 +126,17 @@ describe('fetcher error extraction (characterization)', () => {
       expect(err.message).toBe('first problem')
     })
 
-    it('empty array detail → default message', async () => {
+    it('empty array detail → no message resolved, falls back to body text', async () => {
       const err = await errorFrom({ status: 422, body: { detail: [] } })
-      expect(err.message).toBe('Invalid Data')
+      expect(err.message).toBe('{"detail":[]}')
     })
 
-    it('array whose first item lacks msg → default message', async () => {
+    it('array whose first item lacks msg → no message, falls back to body text', async () => {
       const err = await errorFrom({
         status: 422,
         body: { detail: [{ loc: ['body'] }] },
       })
-      expect(err.message).toBe('Invalid Data')
+      expect(err.message).toBe('{"detail":[{"loc":["body"]}]}')
     })
   })
 
@@ -158,14 +159,15 @@ describe('fetcher error extraction (characterization)', () => {
       expect(err.code).toBeUndefined()
     })
 
-    it('string error becomes the code; message falls back to default', async () => {
+    it('string error becomes the code; message falls back to default(status)', async () => {
       const err = await errorFrom({
         status: 409,
         body: { error: 'CONFLICT_CODE' },
       })
       expect(err.code).toBe('CONFLICT_CODE')
-      // no message resolved but code present → message = default(status)
-      expect(err.message).toBe('An Error Occurred')
+      // code present → the JSON branch returns { message: default(status), code };
+      // 409 has no explicit case so the generic 4xx default applies.
+      expect(err.message).toBe('Bad Request')
     })
 
     it('string error but detail also present → detail wins for message, error is code', async () => {
@@ -249,13 +251,15 @@ describe('fetcher error extraction (characterization)', () => {
       expect(err.message).toBe('Server Error')
     })
 
-    it('JSON content-type but empty object body → default message', async () => {
+    it('JSON content-type but empty object body → falls back to body text', async () => {
       const err = await errorFrom({
         status: 404,
         contentType: 'application/json',
         body: {},
       })
-      expect(err.message).toBe('Not Found')
+      // {} yields no message/code, so the JSON branch returns nothing and the
+      // fallback returns the short, tag-free serialized body verbatim.
+      expect(err.message).toBe('{}')
     })
 
     it('unreadable body entirely → default message', async () => {

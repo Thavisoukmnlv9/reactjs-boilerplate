@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { Switch } from '../ui/switch'
+import { formatTimeInput, validateTimeFormat } from './opening-hours-utils'
 
 export interface OpeningHoursData {
   monday?: string
@@ -47,52 +48,6 @@ const DAY_SHORT_LABELS = {
   saturday: 'Sat',
   sunday: 'Sun',
 } as const
-
-function validateTimeFormat(time: string): boolean {
-  if (!time) return true // Empty is valid (closed)
-  const timeRegex =
-    /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]-([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
-  return timeRegex.test(time)
-}
-
-function formatTimeInput(value: string): string {
-  // Auto-format time input as user types, preserving hyphen for time ranges
-  const cleaned = value.replace(/[^\d:-]/g, '')
-
-  // Check if it contains a hyphen (time range format)
-  if (cleaned.includes('-')) {
-    const [startTime, endTime] = cleaned.split('-')
-
-    // Format start time
-    let formattedStart = startTime
-    if (startTime.length >= 2 && !startTime.includes(':')) {
-      formattedStart = startTime.slice(0, 2) + ':' + startTime.slice(2, 4)
-    }
-
-    // Format end time
-    let formattedEnd = endTime
-    if (endTime.length >= 2 && !endTime.includes(':')) {
-      formattedEnd = endTime.slice(0, 2) + ':' + endTime.slice(2, 4)
-    }
-
-    return `${formattedStart}-${formattedEnd}`
-  }
-
-  // Single time format (no hyphen)
-  const parts = cleaned.split(':')
-
-  if (parts.length === 1 && parts[0].length <= 2) {
-    return parts[0]
-  }
-
-  if (parts.length === 2) {
-    const hours = parts[0].slice(0, 2)
-    const minutes = parts[1].slice(0, 2)
-    return `${hours}:${minutes}`
-  }
-
-  return cleaned
-}
 
 export const OpeningHoursFormField = React.forwardRef<
   HTMLDivElement,

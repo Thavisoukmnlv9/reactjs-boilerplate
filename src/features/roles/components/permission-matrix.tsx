@@ -1,12 +1,14 @@
 import { Lock, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/shared/components/ui/accordion'
-import { Badge } from '@/shared/components/ui/badge'
-import { Checkbox } from '@/shared/components/ui/checkbox'
-import { Input } from '@/shared/components/ui/input'
-import { Progress } from '@/shared/components/ui/progress'
 import { usePermissionsQuery } from '@/features/roles/api/queries'
+import {
+  applyModule,
+  computeModuleStats,
+  filterGroupsByQuery,
+  isDangerCode,
+  toggleCode,
+} from '@/features/roles/components/permission-tree'
 import {
   actionTone,
   DANGER_ZONE_CODES,
@@ -14,6 +16,11 @@ import {
   labelForCode,
   moduleLabel,
 } from '@/features/roles/lib/permission-catalog'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/shared/components/ui/accordion'
+import { Badge } from '@/shared/components/ui/badge'
+import { Checkbox } from '@/shared/components/ui/checkbox'
+import { Input } from '@/shared/components/ui/input'
+import { Progress } from '@/shared/components/ui/progress'
 
 const toneClass: Record<string, string> = {
   neutral: 'bg-muted text-muted-foreground',
@@ -35,32 +42,18 @@ export function PermissionMatrix({ value, onChange, disabled }: Props) {
   const groups = useMemo(() => groupByModule(perms), [perms])
   const q = query.trim().toLowerCase()
 
-  const visible = groups
-    .map((g) => ({
-      ...g,
-      perms: q ? g.perms.filter((p) => p.code.toLowerCase().includes(q) || labelForCode(p.code).includes(q)) : g.perms,
-    }))
-    .filter((g) => g.perms.length > 0)
+  const visible = filterGroupsByQuery(groups, q)
 
-  const isDanger = (code: string) => DANGER_ZONE_CODES.includes(code)
+  const isDanger = (code: string) => isDangerCode(code, DANGER_ZONE_CODES)
 
   function toggle(code: string) {
     if (disabled || isDanger(code)) return
-    const next = new Set(value)
-    if (next.has(code)) next.delete(code)
-    else next.add(code)
-    onChange([...next])
+    onChange(toggleCode(value, code, DANGER_ZONE_CODES))
   }
 
   function setModule(codes: string[], on: boolean) {
     if (disabled) return
-    const next = new Set(value)
-    for (const c of codes) {
-      if (isDanger(c)) continue
-      if (on) next.add(c)
-      else next.delete(c)
-    }
-    onChange([...next])
+    onChange(applyModule(value, codes, on, DANGER_ZONE_CODES))
   }
 
   if (isLoading) return <div className="text-muted-foreground text-sm">Loading permissions…</div>
@@ -78,15 +71,16 @@ export function PermissionMatrix({ value, onChange, disabled }: Props) {
       </div>
       <Accordion type="multiple" className="rounded-md border">
         {visible.map((g) => {
-          const grantable = g.perms.map((p) => p.code).filter((c) => !isDanger(c))
-          const granted = grantable.filter((c) => selected.has(c)).length
-          const pct = grantable.length ? Math.round((granted / grantable.length) * 100) : 0
-          const all = grantable.length > 0 && granted === grantable.length
+          const { grantable, granted, pct, checkedState } = computeModuleStats(
+            g.perms,
+            selected,
+            DANGER_ZONE_CODES
+          )
           return (
             <AccordionItem key={g.module} value={g.module} className="px-3">
               <div className="flex items-center gap-3 py-1">
                 <Checkbox
-                  checked={all ? true : granted > 0 ? 'indeterminate' : false}
+                  checked={checkedState}
                   disabled={disabled}
                   onCheckedChange={(c) => setModule(grantable, c === true)}
                   aria-label={`Grant all ${g.module}`}

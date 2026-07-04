@@ -2,17 +2,17 @@ import { ApiError } from '@/core/api/api-error'
 import { sessionManager } from '@/core/auth/session-manager'
 import { tokenStorage } from '@/core/auth/token'
 
+type ApiErrorObject = {
+  code?: string
+  message?: string
+  status_code?: number
+}
+
 type ApiErrorShape = {
   message?: string
   /** FastAPI HTTPException default body */
   detail?: string | string[] | Array<{ msg?: string }>
-  error?:
-    | string
-    | {
-        code?: string
-        message?: string
-        status_code?: number
-      }
+  error?: string | ApiErrorObject
 } | null
 
 async function parseJsonSafe(res: Response): Promise<ApiErrorShape> {
@@ -23,6 +23,60 @@ async function parseJsonSafe(res: Response): Promise<ApiErrorShape> {
   }
 }
 
+type ApiErrorBody = NonNullable<ApiErrorShape>
+
+/** True when `error` is the structured `{ code, message }` object form. */
+function isErrorObject(error: ApiErrorBody['error']): error is ApiErrorObject {
+  return typeof error === 'object' && error !== null
+}
+
+/**
+ * Pull a human message out of a FastAPI `detail` field.
+ * Handles a plain string, an array of strings, or an array of validation
+ * issues (`{ msg }`). Returns undefined when nothing usable is present.
+ */
+function messageFromDetail(detail: ApiErrorBody['detail']): string | undefined {
+  if (typeof detail === 'string') {
+    return detail.trim() ? detail : undefined
+  }
+  if (Array.isArray(detail) && detail.length > 0) {
+    const first = detail[0]
+    if (typeof first === 'string') return first
+    if (first && typeof first === 'object' && 'msg' in first && first.msg) {
+      return String(first.msg)
+    }
+  }
+  return undefined
+}
+
+/**
+ * Extract an error `code` from the body. Mirrors the original coupling:
+ * an object `error` contributes its `code` only when it also carries a
+ * `message`; a string `error` is itself the code.
+ */
+function extractCode(data: ApiErrorBody): string | undefined {
+  const { error } = data
+  if (isErrorObject(error) && error.message) return error.code
+  if (typeof error === 'string') return error
+  return undefined
+}
+
+/**
+ * Extract a human message from the body, in priority order:
+ * structured `error.message` → FastAPI `detail` → top-level `message`.
+ * Returns undefined when none apply (caller then decides on a fallback).
+ */
+function extractMessage(data: ApiErrorBody): string | undefined {
+  const { error } = data
+  if (isErrorObject(error) && error.message) return error.message
+
+  const fromDetail = messageFromDetail(data.detail)
+  if (fromDetail) return fromDetail
+
+  if (data.message) return String(data.message)
+  return undefined
+}
+
 async function getErrorMessageAndCode(
   res: Response
 ): Promise<{ message: string; code: string | undefined }> {
@@ -30,34 +84,8 @@ async function getErrorMessageAndCode(
   if (contentType?.includes('application/json')) {
     const data = await parseJsonSafe(res)
     if (data) {
-      let code: string | undefined
-      let message: string | undefined
-      if (data.error && typeof data.error === 'object' && data.error.message) {
-        message = data.error.message
-        code = data.error.code
-      } else if (typeof data.error === 'string') {
-        code = data.error
-      }
-      if (!message) {
-        const d = data.detail
-        if (typeof d === 'string' && d.trim()) {
-          message = d
-        } else if (Array.isArray(d) && d.length > 0) {
-          const first = d[0]
-          if (typeof first === 'string') message = first
-          else if (
-            first &&
-            typeof first === 'object' &&
-            'msg' in first &&
-            first.msg
-          ) {
-            message = String(first.msg)
-          }
-        }
-      }
-      if (!message && data.message) {
-        message = String(data.message)
-      }
+      const code = extractCode(data)
+      const message = extractMessage(data)
       if (message || code) {
         return { message: message ?? getDefaultErrorMessage(res.status), code }
       }
@@ -65,10 +93,6 @@ async function getErrorMessageAndCode(
   }
 
   return { message: await getErrorMessageFallback(res), code: undefined }
-}
-
-async function getErrorMessage(res: Response): Promise<string> {
-  return (await getErrorMessageAndCode(res)).message
 }
 
 async function getErrorMessageFallback(res: Response): Promise<string> {
@@ -88,9 +112,6 @@ async function getErrorMessageFallback(res: Response): Promise<string> {
 
   return getDefaultErrorMessage(res.status)
 }
-
-// Suppress unused-var lint — getErrorMessage is still re-exported.
-void getErrorMessage
 
 function getDefaultErrorMessage(status: number): string {
   switch (status) {

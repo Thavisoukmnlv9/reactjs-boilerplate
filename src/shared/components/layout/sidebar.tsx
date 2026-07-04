@@ -187,6 +187,38 @@ function childPathIsActive(
   return pathIsActive(pathname, itemPath)
 }
 
+/**
+ * Given a module's nav children and a permission checker, drop links the user
+ * can't access, then drop any group header left with no visible link beneath
+ * it. Pure with respect to `canSee`: same items + same checker → same result.
+ */
+function collectVisibleChildren(
+  subItems: ModuleNavChild[],
+  canSee: (permission: string | undefined) => boolean
+): ModuleNavChild[] {
+  const out: ModuleNavChild[] = []
+  for (let i = 0; i < subItems.length; i++) {
+    const child = subItems[i]
+    if (isModuleNavLink(child)) {
+      if (canSee(child.permission)) out.push(child)
+      continue
+    }
+    let hasVisibleLink = false
+    for (
+      let j = i + 1;
+      j < subItems.length && isModuleNavLink(subItems[j]);
+      j++
+    ) {
+      if (canSee((subItems[j] as { permission?: string }).permission)) {
+        hasVisibleLink = true
+        break
+      }
+    }
+    if (hasVisibleLink) out.push(child)
+  }
+  return out
+}
+
 function NavItem({
   label,
   path,
@@ -300,31 +332,10 @@ function ModuleNavItem({
   const Icon = iconMap[icon] ?? LayoutDashboard
   const basePath = normalizePath(path)
 
-  // Drop links the user can't access, then drop any group header left with no
-  // visible link beneath it.
-  const visibleChildren = React.useMemo(() => {
-    const out: ModuleNavChild[] = []
-    for (let i = 0; i < subItems.length; i++) {
-      const child = subItems[i]
-      if (isModuleNavLink(child)) {
-        if (canSee(child.permission)) out.push(child)
-        continue
-      }
-      let hasVisibleLink = false
-      for (
-        let j = i + 1;
-        j < subItems.length && isModuleNavLink(subItems[j]);
-        j++
-      ) {
-        if (canSee((subItems[j] as { permission?: string }).permission)) {
-          hasVisibleLink = true
-          break
-        }
-      }
-      if (hasVisibleLink) out.push(child)
-    }
-    return out
-  }, [subItems, canSee])
+  const visibleChildren = React.useMemo(
+    () => collectVisibleChildren(subItems, canSee),
+    [subItems, canSee]
+  )
 
   const childMatches = React.useCallback(
     () =>
