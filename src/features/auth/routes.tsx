@@ -7,3 +7,6 @@ export const authRoutes: RouteObject[] = [
     lazy: () => import('./pages/login-page').then((m) => ({ Component: m.LoginPage })),
   },
 ]
+
+
+
