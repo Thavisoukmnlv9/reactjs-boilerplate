@@ -86,6 +86,27 @@ function buildMobileCellContext<TData>(
   }
 }
 
+/**
+ * Render a column's cell for the mobile card. The actions branch and the value
+ * branch both invoke the cell function with the same mobile cell context; this
+ * keeps that single call in one place. Callers keep their own
+ * `typeof column.cell === 'function'` guard and their own non-function fallback.
+ */
+function renderMobileCell<TData>(
+  column: ColumnDef<TData, unknown>,
+  row: TData,
+  rowIndex: number,
+  expandedRows: Record<number, boolean>,
+  toggleExpanded: (index: number) => void
+): React.ReactNode {
+  // The mobile cell context is a structural subset of TanStack's CellContext;
+  // cast the same way the original inline call sites did (type-only, no runtime change).
+  // biome-ignore lint/suspicious/noExplicitAny: matches the original inline cast
+  return (column.cell as any)(
+    buildMobileCellContext(column, row, rowIndex, expandedRows, toggleExpanded)
+  )
+}
+
 export function MobileCardList<TData>({
   columns,
   data,
@@ -164,14 +185,12 @@ export function MobileCardList<TData>({
                   >
                     <div className="flex flex-wrap gap-2">
                       {typeof column.cell === 'function' ? (
-                        (column.cell as any)(
-                          buildMobileCellContext(
-                            column,
-                            row,
-                            index,
-                            expandedRows,
-                            toggleExpanded
-                          )
+                        renderMobileCell(
+                          column,
+                          row,
+                          index,
+                          expandedRows,
+                          toggleExpanded
                         )
                       ) : (
                         <div className="text-muted-foreground text-sm">
@@ -220,14 +239,12 @@ export function MobileCardList<TData>({
                   </div>
                   <div className="text-sm">
                     {typeof column.cell === 'function' ? (
-                      (column.cell as any)(
-                        buildMobileCellContext(
-                          column,
-                          row,
-                          index,
-                          expandedRows,
-                          toggleExpanded
-                        )
+                      renderMobileCell(
+                        column,
+                        row,
+                        index,
+                        expandedRows,
+                        toggleExpanded
                       )
                     ) : (
                       <div>
