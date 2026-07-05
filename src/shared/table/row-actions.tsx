@@ -20,6 +20,20 @@ export type RowAction =
       icon?: LucideIcon
     }
 
+type NavigateFn = ReturnType<typeof useNavigate>
+
+/**
+ * Both the inline and dropdown branches map a RowAction to its click handler the
+ * same way: a `to` action navigates (params/search preserved); an `onClick`
+ * action is returned by reference so React's event argument passes straight
+ * through.
+ */
+function resolveActionHandler(action: RowAction, navigate: NavigateFn): () => void {
+  return 'to' in action
+    ? () => void navigate({ to: action.to, params: action.params, search: action.search })
+    : action.onClick
+}
+
 export function RowActions({
   actions,
   maxInline = 2,
@@ -36,15 +50,7 @@ export function RowActions({
       <div className="flex gap-2">
         {actions.map((a) => {
           const Icon = a.icon
-          const onClick =
-            'to' in a
-              ? () =>
-                  void navigate({
-                    to: a.to,
-                    params: a.params,
-                    search: a.search,
-                  })
-              : a.onClick
+          const onClick = resolveActionHandler(a, navigate)
           return (
             <Button
               key={a.label}
@@ -67,11 +73,7 @@ export function RowActions({
     <SimpleDropdown
       items={actions.map((a) => {
         const Icon = a.icon
-        const action =
-          'to' in a
-            ? () =>
-                void navigate({ to: a.to, params: a.params, search: a.search })
-            : a.onClick
+        const action = resolveActionHandler(a, navigate)
         return {
           label: a.label,
           icon: Icon ? <Icon className="mr-2 h-4 w-4" /> : undefined,
