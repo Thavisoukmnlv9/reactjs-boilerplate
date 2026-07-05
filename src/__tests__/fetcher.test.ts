@@ -109,13 +109,50 @@ describe('fetcher error extraction (characterization)', () => {
       expect(err.message).toBe('{"detail":"   "}')
     })
 
-    it('array of validation issues → first issue msg', async () => {
+    it('array of validation issues → field-scoped first issue', async () => {
       const err = await errorFrom({
         status: 422,
         body: { detail: [{ msg: 'field required', loc: ['body', 'name'] }] },
       })
-      expect(err.message).toBe('field required')
+      expect(err.message).toBe('Name: field required')
       expect(err.code).toBeUndefined()
+    })
+
+    it("Zod's 'received null' noise → a clean required-field message", async () => {
+      const err = await errorFrom({
+        status: 422,
+        body: { detail: [{ msg: 'Invalid input: expected string, received null', loc: ['body', 'description'] }] },
+      })
+      expect(err.message).toBe('Description is required.')
+    })
+
+    it('a trailing _id is stripped from the field label', async () => {
+      const err = await errorFrom({
+        status: 422,
+        body: { detail: [{ msg: 'Invalid input: expected string, received undefined', loc: ['body', 'role_id'] }] },
+      })
+      expect(err.message).toBe('Role is required.')
+    })
+
+    it('multiple issues → first shown with a "+N more" hint', async () => {
+      const err = await errorFrom({
+        status: 422,
+        body: {
+          detail: [
+            { msg: 'Invalid input: expected string, received null', loc: ['body', 'name'] },
+            { msg: 'Enter a valid email address', loc: ['body', 'email'] },
+          ],
+        },
+      })
+      expect(err.message).toBe('Name is required. (+1 more)')
+    })
+
+    it('a message that already names its field is left as-is', async () => {
+      const err = await errorFrom({
+        status: 422,
+        body: { detail: [{ msg: 'Enter a valid email address', loc: ['body', 'email'] }] },
+      })
+      expect(err.message).toBe('Enter a valid email address')
     })
 
     it('array of plain strings → first string', async () => {

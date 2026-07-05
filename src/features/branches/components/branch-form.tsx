@@ -113,8 +113,8 @@ export function BranchForm({ mode, initial, onDone }: Props) {
           accent="emerald"
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <FormInput name="timezone" label="Timezone" icon={<Globe />} placeholder="UTC" />
-            <FormSelect name="currency_code" label="Currency" options={currencyOptions} />
+            <FormInput name="timezone" label="Timezone" requiredMark icon={<Globe />} placeholder="UTC" />
+            <FormSelect name="currency_code" label="Currency" requiredMark options={currencyOptions} />
             <FormPercentBps name="tax_rate_bps" label="Tax rate" hint="0–50%" maxPercent={50} />
             <FormPercentBps name="service_fee_bps" label="Service fee" hint="0–50%" maxPercent={50} />
           </div>

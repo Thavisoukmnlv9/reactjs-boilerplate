@@ -10,8 +10,8 @@ type ApiErrorObject = {
 
 type ApiErrorShape = {
   message?: string
-  /** FastAPI HTTPException default body */
-  detail?: string | string[] | Array<{ msg?: string }>
+  /** FastAPI HTTPException default body (validation issues carry `loc`/`type`). */
+  detail?: string | string[] | Array<{ loc?: unknown; msg?: string; type?: string }>
   error?: string | ApiErrorObject
 } | null
 
@@ -30,10 +30,41 @@ function isErrorObject(error: ApiErrorBody['error']): error is ApiErrorObject {
   return typeof error === 'object' && error !== null
 }
 
+/** A validation issue's `loc` (e.g. ['body','staff_note']) → a readable label ('Staff note'). */
+function fieldLabel(loc: unknown): string | undefined {
+  if (!Array.isArray(loc)) return undefined
+  const parts = loc.map(String).filter((p) => p !== 'body' && p !== 'query' && p !== 'params')
+  const last = parts[parts.length - 1]
+  if (!last) return undefined
+  const words = last.replace(/_id$/, '').replace(/[_.]/g, ' ').trim()
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : undefined
+}
+
 /**
- * Pull a human message out of a FastAPI `detail` field.
- * Handles a plain string, an array of strings, or an array of validation
- * issues (`{ msg }`). Returns undefined when nothing usable is present.
+ * Turn one validation issue into a friendly, field-scoped sentence. Rewrites Zod's
+ * default noise ("expected string, received null") into plain language and prefixes
+ * the field name when the message doesn't already name it. Returns undefined when the
+ * issue has no usable message (the caller then falls back).
+ */
+function friendlyIssue(issue: { loc?: unknown; msg?: unknown }): string | undefined {
+  const msg = typeof issue.msg === 'string' ? issue.msg.trim() : ''
+  if (!msg) return undefined
+  const field = fieldLabel(issue.loc)
+  if (/expected .+, received (null|undefined|nan)/i.test(msg)) {
+    return field ? `${field} is required.` : 'A required field is missing.'
+  }
+  if (/^invalid (input|option|value|enum|type)/i.test(msg)) {
+    return field ? `${field} is invalid.` : 'One or more fields are invalid.'
+  }
+  const alreadyNamed = field && msg.toLowerCase().includes(field.toLowerCase().split(' ')[0])
+  return field && !alreadyNamed ? `${field}: ${msg}` : msg
+}
+
+/**
+ * Pull a human message out of a FastAPI-style `detail` field. Handles a plain
+ * string, an array of strings, or an array of validation issues (`{ loc, msg }`) —
+ * the first issue is cleaned into a friendly sentence and any extras are noted.
+ * Returns undefined when nothing usable is present.
  */
 function messageFromDetail(detail: ApiErrorBody['detail']): string | undefined {
   if (typeof detail === 'string') {
@@ -42,8 +73,11 @@ function messageFromDetail(detail: ApiErrorBody['detail']): string | undefined {
   if (Array.isArray(detail) && detail.length > 0) {
     const first = detail[0]
     if (typeof first === 'string') return first
-    if (first && typeof first === 'object' && 'msg' in first && first.msg) {
-      return String(first.msg)
+    if (first && typeof first === 'object') {
+      const msg = friendlyIssue(first as { loc?: unknown; msg?: unknown })
+      if (!msg) return undefined
+      const more = detail.length - 1
+      return more > 0 ? `${msg} (+${more} more)` : msg
     }
   }
   return undefined
