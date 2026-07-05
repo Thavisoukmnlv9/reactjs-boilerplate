@@ -65,11 +65,16 @@ export function DevQuickLogin({ onPick, pendingEmail, disabled }: Props) {
                 <Icon className="size-4" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium leading-tight">{role}</span>
+                <span className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium leading-tight">{role}</span>
+                  {isPending ? (
+                    <Loader2 className="size-3.5 shrink-0 animate-spin text-primary" />
+                  ) : (
+                    <span className="shrink-0 font-mono text-[0.7rem] text-muted-foreground">{email}</span>
+                  )}
+                </span>
                 <span className="block truncate text-xs text-muted-foreground">{hint}</span>
               </span>
-              <span className="hidden font-mono text-[0.7rem] text-muted-foreground sm:block">{email}</span>
-              {isPending ? <Loader2 className="size-4 shrink-0 animate-spin text-primary" /> : null}
             </button>
           )
         })}
