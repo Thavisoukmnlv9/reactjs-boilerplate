@@ -63,6 +63,8 @@ export function UsersPage() {
 
   const canInvite = useCan(PERMISSIONS.USERS_INVITE)
   const canManage = useCan(PERMISSIONS.USERS_MANAGE)
+  const canBulk = useCan(PERMISSIONS.USERS_BULK)
+  const canExport = useCan(PERMISSIONS.USERS_EXPORT)
 
   const usersQuery = useUsersQuery({
     q: search.q,
@@ -225,9 +227,9 @@ export function UsersPage() {
       },
     ]
     const visible = base.filter((c) => !hidden.has(c.id as string))
-    return canManage ? [createSelectColumn(selection, 'member'), ...visible] : visible
+    return canBulk ? [createSelectColumn(selection, 'member'), ...visible] : visible
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hidden, canManage, canInvite, roles, selection])
+  }, [hidden, canManage, canBulk, canInvite, roles, selection])
 
   const statItems = [
     { id: 'total', label: 'Total members', value: statsQuery.data?.total ?? 0, icon: <UsersIcon /> },
@@ -322,7 +324,7 @@ export function UsersPage() {
                     })
                   }
                 />
-                <TableExportMenu onExport={{ csv: handleExport }} />
+                {canExport ? <TableExportMenu onExport={{ csv: handleExport }} /> : null}
               </>
             }
           />
@@ -350,7 +352,7 @@ export function UsersPage() {
         </div>
       )}
 
-      {canManage ? (
+      {canBulk ? (
         <TableBulkActionBar
           selectedCount={selection.selectedCount}
           totalCount={total}

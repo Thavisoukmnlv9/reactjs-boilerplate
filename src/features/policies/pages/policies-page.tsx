@@ -46,6 +46,8 @@ export function PoliciesPage() {
     useTableUrlState<PoliciesSearch>()
 
   const canManage = useCan(PERMISSIONS.POLICIES_MANAGE)
+  const canBulk = useCan(PERMISSIONS.POLICIES_BULK)
+  const canExport = useCan(PERMISSIONS.POLICIES_EXPORT)
 
   const policiesQuery = usePoliciesQuery({
     subject: search.subject,
@@ -153,9 +155,9 @@ export function PoliciesPage() {
         },
       },
     ]
-    return canManage ? [createSelectColumn(selection, 'policy'), ...base] : base
+    return canBulk ? [createSelectColumn(selection, 'policy'), ...base] : base
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canManage, selection, roles])
+  }, [canManage, canBulk, selection, roles])
 
   const statItems = [
     { id: 'total', label: 'Total policies', value: statsQuery.data?.total ?? 0, icon: <ScrollText /> },
@@ -230,7 +232,7 @@ export function PoliciesPage() {
                 <TableFilterChips chips={chips} />
               </>
             }
-            right={<TableExportMenu onExport={{ csv: handleExport }} />}
+            right={canExport ? <TableExportMenu onExport={{ csv: handleExport }} /> : null}
           />
 
           <DataTable
@@ -256,7 +258,7 @@ export function PoliciesPage() {
         </div>
       )}
 
-      {canManage ? (
+      {canBulk ? (
         <TableBulkActionBar
           selectedCount={selection.selectedCount}
           totalCount={total}

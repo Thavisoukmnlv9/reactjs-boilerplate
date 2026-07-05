@@ -34,6 +34,8 @@ export function RolesPage() {
   const { search, pageIndex, pageSize, setPagination, setSort, setQuery } = useTableUrlState()
 
   const canManage = useCan(PERMISSIONS.ROLES_MANAGE)
+  const canBulk = useCan(PERMISSIONS.ROLES_BULK)
+  const canExport = useCan(PERMISSIONS.ROLES_EXPORT)
 
   const rolesQuery = useRolesQuery({
     q: search.q,
@@ -139,9 +141,9 @@ export function RolesPage() {
         },
       },
     ]
-    return canManage ? [createSelectColumn(selection, 'role'), ...base] : base
+    return canBulk ? [createSelectColumn(selection, 'role'), ...base] : base
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canManage, selection, navigate])
+  }, [canManage, canBulk, selection, navigate])
 
   const statItems = [
     { id: 'total', label: 'Total roles', value: statsQuery.data?.total ?? 0, icon: <Shield /> },
@@ -182,7 +184,7 @@ export function RolesPage() {
         <div>
           <TableToolbar
             left={<TableSearch value={search.q ?? ''} onChange={setQuery} placeholder="Search roles…" />}
-            right={<TableExportMenu onExport={{ csv: handleExport }} />}
+            right={canExport ? <TableExportMenu onExport={{ csv: handleExport }} /> : null}
           />
           <DataTable
             key={`${search.q ?? ''}|${pageSize}`}
@@ -207,7 +209,7 @@ export function RolesPage() {
         </div>
       )}
 
-      {canManage ? (
+      {canBulk ? (
         <TableBulkActionBar
           selectedCount={selection.selectedCount}
           totalCount={total}

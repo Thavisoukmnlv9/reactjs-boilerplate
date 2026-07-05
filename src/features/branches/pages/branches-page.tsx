@@ -55,6 +55,8 @@ export function BranchesPage() {
 
   const canManage = useCan(PERMISSIONS.BRANCHES_MANAGE)
   const canDelete = useCan(PERMISSIONS.BRANCHES_DELETE)
+  const canBulk = useCan(PERMISSIONS.BRANCHES_BULK)
+  const canExport = useCan(PERMISSIONS.BRANCHES_EXPORT)
 
   const isActive = search.status === 'active' ? true : search.status === 'archived' ? false : undefined
   const branchesQuery = useBranchesQuery({
@@ -182,9 +184,9 @@ export function BranchesPage() {
       },
     ]
     const visible = base.filter((c) => !hidden.has(c.id as string))
-    return canManage || canDelete ? [createSelectColumn(selection, 'branch'), ...visible] : visible
+    return canBulk ? [createSelectColumn(selection, 'branch'), ...visible] : visible
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hidden, canManage, canDelete, selection])
+  }, [hidden, canManage, canDelete, canBulk, selection])
 
   const statItems = [
     { id: 'total', label: 'Total branches', value: statsQuery.data?.total ?? 0, icon: <Building2 /> },
@@ -201,11 +203,11 @@ export function BranchesPage() {
   const unfilteredEmpty = !branchesQuery.isLoading && !branchesQuery.isError && total === 0 && !hasFilters
 
   const bulkActions: BulkAction[] = []
-  if (canManage) {
+  if (canBulk) {
     bulkActions.push({ label: 'Activate', icon: ArchiveRestore, onClick: () => void runBulk('activate', 'activated') })
     bulkActions.push({ label: 'Archive', icon: Archive, onClick: () => void runBulk('archive', 'archived') })
+    bulkActions.push({ label: 'Delete', icon: Trash2, variant: 'destructive', onClick: () => void runBulk('delete', 'deleted', true) })
   }
-  if (canDelete) bulkActions.push({ label: 'Delete', icon: Trash2, variant: 'destructive', onClick: () => void runBulk('delete', 'deleted', true) })
 
   return (
     <div className="space-y-6">
@@ -277,7 +279,7 @@ export function BranchesPage() {
                     })
                   }
                 />
-                <TableExportMenu onExport={{ csv: handleExport }} />
+                {canExport ? <TableExportMenu onExport={{ csv: handleExport }} /> : null}
               </>
             }
           />
