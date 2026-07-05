@@ -1,5 +1,6 @@
 import i18next from 'i18next'
-import type { SupportedLang } from '@/routes/__root'
+
+import { languageOf, type SupportedLocale } from '@/config/languages'
 
 /**
  * Maps each language to the font files its script needs. Vietnamese and English
@@ -8,7 +9,7 @@ import type { SupportedLang } from '@/routes/__root'
  * file *will* eventually load when a glyph appears — this preloader just
  * skips the FOIT window when the user actively switches language.
  */
-const FONTS_BY_LANG: Record<SupportedLang, readonly string[]> = {
+const FONTS_BY_LANG: Record<SupportedLocale, readonly string[]> = {
   en: [],
   vi: [],
   lo: [
@@ -42,14 +43,16 @@ function preloadFont(href: string): void {
   document.head.appendChild(link)
 }
 
-function isSupportedLang(value: string): value is SupportedLang {
+function isSupportedLang(value: string): value is SupportedLocale {
   return value in FONTS_BY_LANG
 }
 
+/** Reflect the active language on `<html>` and warm the fonts its script needs. */
 function applyLang(lang: string): void {
   const code = lang.split('-')[0]
   if (!isSupportedLang(code)) return
   document.documentElement.lang = code
+  document.documentElement.dir = languageOf(code)?.dir ?? 'ltr'
   for (const href of FONTS_BY_LANG[code]) preloadFont(href)
 }
 

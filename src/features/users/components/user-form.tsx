@@ -1,14 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Building2, Check, Copy, IdCard, Mail, ShieldCheck, User as UserIcon } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { useBranchesQuery } from '@/features/branches/api/queries'
 import { useRolesQuery } from '@/features/roles/api/queries'
 import { useInviteUser, useUpdateUser } from '@/features/users/api/mutations'
 import type { MemberView } from '@/features/users/api/types'
-import { type UserFormValues, userFormSchema } from '@/features/users/schema'
+import { makeUserSchema, type UserFormValues } from '@/features/users/schema'
 import { FormProvider } from '@/shared/components/form/core/FormRoot'
 import { Field } from '@/shared/components/form/fields/Field'
 import { FormInput } from '@/shared/components/form/fields/FormInput'
@@ -38,6 +39,7 @@ function defaultsFor(initial?: MemberView): UserFormValues {
 }
 
 export function UserForm({ mode, initial, onDone }: Props) {
+  const { t } = useTranslation(['users', 'common'])
   const { data: rolesData } = useRolesQuery({ limit: 100 })
   const { data: branchesData } = useBranchesQuery({ limit: 100 })
   const roles = rolesData?.items ?? []
@@ -48,8 +50,9 @@ export function UserForm({ mode, initial, onDone }: Props) {
   const isPending = invite.isPending || update.isPending
   const [issued, setIssued] = useState<{ token: string; email: string } | null>(null)
 
+  const schema = useMemo(() => makeUserSchema(t), [t])
   const methods = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchema),
+    resolver: zodResolver(schema),
     defaultValues: defaultsFor(initial),
     mode: 'onBlur',
   })
@@ -77,7 +80,7 @@ export function UserForm({ mode, initial, onDone }: Props) {
           staff_note: values.staff_note.trim() || null,
         })
         setIssued({ token: res.invite_token, email: res.member.user.email ?? values.email })
-        toast.success('Invite created')
+        toast.success(t('toasts.inviteCreated'))
       } else if (initial) {
         await update.mutateAsync({
           id: initial.id,
@@ -90,7 +93,7 @@ export function UserForm({ mode, initial, onDone }: Props) {
             staff_note: values.staff_note.trim() || null,
           },
         })
-        toast.success('Member updated')
+        toast.success(t('toasts.memberUpdated'))
         onDone()
       }
     } catch (e) {
@@ -103,23 +106,23 @@ export function UserForm({ mode, initial, onDone }: Props) {
     return (
       <div className="space-y-4 p-4">
         <div className="flex items-center gap-2 font-medium text-sm">
-          <Check className="size-4 text-success" /> Invite ready for {issued.email}
+          <Check className="size-4 text-success" /> {t('form.inviteReady', { email: issued.email })}
         </div>
         <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
           <code className="flex-1 truncate font-mono text-xs">{link}</code>
           <Button
             size="icon"
             variant="ghost"
-            aria-label="Copy invite link"
+            aria-label={t('form.copyInviteLink')}
             onClick={() => {
               void navigator.clipboard.writeText(link)
-              toast.success('Invite link copied')
+              toast.success(t('toasts.inviteLinkCopiedShort'))
             }}
           >
             <Copy className="size-4" />
           </Button>
         </div>
-        <p className="text-muted-foreground text-xs">The link is valid for 7 days. The member sets their own password.</p>
+        <p className="text-muted-foreground text-xs">{t('form.linkValidity')}</p>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -128,9 +131,9 @@ export function UserForm({ mode, initial, onDone }: Props) {
               setIssued(null)
             }}
           >
-            Invite another
+            {t('form.inviteAnother')}
           </Button>
-          <Button onClick={onDone}>Done</Button>
+          <Button onClick={onDone}>{t('form.done')}</Button>
         </div>
       </div>
     )
@@ -145,88 +148,86 @@ export function UserForm({ mode, initial, onDone }: Props) {
   return (
     <FormProvider methods={methods} onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4">
-        <FormSectionCard eyebrow="Identity" title="Who they are" icon={<UserIcon />} accent="brand">
+        <FormSectionCard eyebrow={t('form.identityEyebrow')} title={t('form.identityTitle')} icon={<UserIcon />} accent="brand">
           <div className="grid gap-4 sm:grid-cols-2">
             {mode === 'create' ? (
               <FormInput
                 name="email"
-                label="Email"
+                label={t('form.email')}
                 type="email"
                 requiredMark
                 icon={<Mail />}
-                placeholder="teammate@company.com"
+                placeholder={t('form.emailPlaceholder')}
               />
             ) : (
-              <Field name="email" label="Email">
+              <Field name="email" label={t('form.email')}>
                 <p className="pt-2 font-mono text-muted-foreground text-sm">{initial?.user.email}</p>
               </Field>
             )}
-            <FormInput name="name" label="Name" placeholder="Full name" />
+            <FormInput name="name" label={t('form.name')} placeholder={t('form.namePlaceholder')} />
           </div>
         </FormSectionCard>
 
         <FormSectionCard
-          eyebrow="Access"
-          title="Role & permissions"
-          description={initial?.is_owner ? 'The owner keeps full access — their role is fixed.' : undefined}
+          eyebrow={t('form.accessEyebrow')}
+          title={t('form.accessTitle')}
+          description={initial?.is_owner ? t('form.ownerAccessNote') : undefined}
           icon={<ShieldCheck />}
           accent="violet"
         >
           <FormSelect
             name="role_id"
-            label="Role"
+            label={t('form.role')}
             requiredMark
             options={roleOptions}
-            placeholder="Select a role"
+            placeholder={t('form.rolePlaceholder')}
             disabled={initial?.is_owner}
           />
           {roleImpact ? (
             <p className="text-muted-foreground text-sm">
-              Grants <span className="font-medium text-foreground tabular-nums">{roleImpact.perms}</span> permissions
-              across <span className="font-medium text-foreground tabular-nums">{roleImpact.modules}</span>{' '}
-              module{roleImpact.modules === 1 ? '' : 's'}.
+              {t('form.roleImpact', { perms: roleImpact.perms, count: roleImpact.modules, modules: roleImpact.modules })}
             </p>
           ) : null}
         </FormSectionCard>
 
         <FormSectionCard
-          eyebrow="Branches"
-          title="Branch access"
-          description="Which locations this member can operate."
+          eyebrow={t('form.branchesEyebrow')}
+          title={t('form.branchesTitle')}
+          description={t('form.branchesDescription')}
           icon={<Building2 />}
           accent="sky"
         >
           {branches.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No active branches to assign yet.</p>
+            <p className="text-muted-foreground text-sm">{t('form.noBranches')}</p>
           ) : (
             <>
-              <FormMultiSelectChips name="branch_ids" label="Assigned branches" options={branchOptions} />
+              <FormMultiSelectChips name="branch_ids" label={t('form.assignedBranches')} options={branchOptions} />
               {(branchIds ?? []).length > 0 ? (
                 <FormSelect
                   name="default_branch_id"
-                  label="Default branch"
+                  label={t('form.defaultBranch')}
                   clearable
-                  clearLabel="No default"
+                  clearLabel={t('form.noDefault')}
                   options={defaultBranchOptions}
-                  placeholder="No default"
+                  placeholder={t('form.noDefault')}
                 />
               ) : null}
             </>
           )}
         </FormSectionCard>
 
-        <FormSectionCard eyebrow="Staff" title="Staff details" icon={<IdCard />} accent="amber">
-          <FormInput name="staff_title" label="Title" placeholder="e.g. Store manager" />
-          <FormTextarea name="staff_note" label="Notes" rows={3} placeholder="Internal note (optional)" />
+        <FormSectionCard eyebrow={t('form.staffEyebrow')} title={t('form.staffTitle')} icon={<IdCard />} accent="amber">
+          <FormInput name="staff_title" label={t('form.title')} placeholder={t('form.titlePlaceholder')} />
+          <FormTextarea name="staff_note" label={t('form.notes')} rows={3} placeholder={t('form.notesPlaceholder')} />
         </FormSectionCard>
       </div>
 
       <div className="flex items-center justify-end gap-2 border-t bg-background/95 p-4 supports-[backdrop-filter]:bg-background/80 supports-[backdrop-filter]:backdrop-blur">
         <Button type="button" variant="outline" onClick={onDone} disabled={isPending}>
-          Cancel
+          {t('common:actions.cancel')}
         </Button>
         <Button type="submit" disabled={isPending}>
-          {isPending ? 'Saving…' : mode === 'create' ? 'Send invite' : 'Save changes'}
+          {isPending ? t('form.saving') : mode === 'create' ? t('form.sendInvite') : t('form.saveChanges')}
         </Button>
       </div>
     </FormProvider>

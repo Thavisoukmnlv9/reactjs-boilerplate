@@ -3,7 +3,6 @@ import { Building2, LayoutDashboard, LogOut, Menu, ScrollText, Shield, Users } f
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { LanguageSwitcher } from '@/components/common/language-switcher'
 import { ThemeToggle } from '@/components/common/theme-toggle'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -20,20 +19,21 @@ import { appConfig } from '@/config/app-config'
 import { authStore, useCan, useCanCheck, useLogout, useMe } from '@/core/access'
 import { PERMISSIONS } from '@/core/constants/permissions'
 import { cn } from '@/core/utils/cn'
+import { LanguageSwitcher } from '@/shared/components/layout/language-switcher'
 
 interface NavItem {
   to: string
-  label: string
+  labelKey: 'nav.dashboard' | 'nav.users' | 'nav.roles' | 'nav.branches' | 'nav.policies'
   icon: typeof LayoutDashboard
   permission?: string
 }
 
 const NAV: NavItem[] = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/users', label: 'Users', icon: Users, permission: PERMISSIONS.USERS_READ },
-  { to: '/roles', label: 'Roles', icon: Shield, permission: PERMISSIONS.ROLES_READ },
-  { to: '/branches', label: 'Branches', icon: Building2, permission: PERMISSIONS.BRANCHES_READ },
-  { to: '/policies', label: 'Policies', icon: ScrollText, permission: PERMISSIONS.POLICIES_READ },
+  { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard },
+  { to: '/users', labelKey: 'nav.users', icon: Users, permission: PERMISSIONS.USERS_READ },
+  { to: '/roles', labelKey: 'nav.roles', icon: Shield, permission: PERMISSIONS.ROLES_READ },
+  { to: '/branches', labelKey: 'nav.branches', icon: Building2, permission: PERMISSIONS.BRANCHES_READ },
+  { to: '/policies', labelKey: 'nav.policies', icon: ScrollText, permission: PERMISSIONS.POLICIES_READ },
 ]
 
 function initials(name: string | null | undefined): string {
@@ -49,6 +49,7 @@ function initials(name: string | null | undefined): string {
 
 /** Renders the deepest matched route's `staticData.permission` gate, or the page. */
 function RoutePermissionGate({ children }: { children: ReactNode }) {
+  const { t } = useTranslation('common')
   const matches = useMatches()
   const required = [...matches].reverse().find((m) => m.staticData?.permission)?.staticData?.permission
   const allowed = useCan(required)
@@ -56,8 +57,8 @@ function RoutePermissionGate({ children }: { children: ReactNode }) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-2 text-center">
         <Shield className="text-muted-foreground size-8" />
-        <h2 className="text-lg font-semibold">No access</h2>
-        <p className="text-muted-foreground text-sm">You don't have permission to view this page.</p>
+        <h2 className="text-lg font-semibold">{t('permission.noAccess')}</h2>
+        <p className="text-muted-foreground text-sm">{t('permission.noAccessHint')}</p>
       </div>
     )
   }
@@ -65,7 +66,7 @@ function RoutePermissionGate({ children }: { children: ReactNode }) {
 }
 
 export function AppLayout() {
-  const { t } = useTranslation()
+  const { t } = useTranslation(['common', 'auth'])
   useMe() // keep the Zustand store mirrored from the /me query cache
   const canSee = useCanCheck()
   const user = authStore((s) => s.user)
@@ -92,7 +93,7 @@ export function AppLayout() {
           activeProps={{ className: 'bg-sidebar-accent text-sidebar-accent-foreground' }}
         >
           <item.icon className="size-4" />
-          {item.label}
+          {t(item.labelKey)}
         </Link>
       ))}
     </nav>
@@ -156,7 +157,7 @@ export function AppLayout() {
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onClick={handleLogout}>
                 <LogOut className="size-4" />
-                {t('auth:signOut', { defaultValue: 'Sign out' })}
+                {t('auth:signOut')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

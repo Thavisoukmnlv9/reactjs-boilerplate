@@ -1,5 +1,6 @@
 import { Lock, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { useCanCheck } from '@/core/access'
 import { usePermissionsQuery } from '@/features/roles/api/queries'
@@ -38,6 +39,7 @@ interface Props {
 }
 
 export function PermissionMatrix({ value, onChange, disabled }: Props) {
+  const { t } = useTranslation('roles')
   const { data: perms = [], isLoading } = usePermissionsQuery()
   const canGrant = useCanCheck()
   const [query, setQuery] = useState('')
@@ -65,7 +67,7 @@ export function PermissionMatrix({ value, onChange, disabled }: Props) {
     onChange(applyModule(value, codes, on, DANGER_ZONE_CODES))
   }
 
-  if (isLoading) return <div className="text-muted-foreground text-sm">Loading permissions…</div>
+  if (isLoading) return <div className="text-muted-foreground text-sm">{t('matrix.loading')}</div>
 
   return (
     <div className="space-y-3">
@@ -74,7 +76,7 @@ export function PermissionMatrix({ value, onChange, disabled }: Props) {
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search permissions…"
+          placeholder={t('matrix.searchPlaceholder')}
           className="pl-8"
         />
       </div>
@@ -92,7 +94,7 @@ export function PermissionMatrix({ value, onChange, disabled }: Props) {
                   checked={checkedState}
                   disabled={disabled}
                   onCheckedChange={(c) => setModule(grantable, c === true)}
-                  aria-label={`Grant all ${g.module}`}
+                  aria-label={t('matrix.grantAll', { module: moduleLabel(g.module) })}
                 />
                 <AccordionTrigger className="flex-1">
                   <span className="flex flex-1 items-center justify-between gap-3 pr-2">
@@ -123,7 +125,7 @@ export function PermissionMatrix({ value, onChange, disabled }: Props) {
                         <span className="flex-1 capitalize">{labelForCode(p.code)}</span>
                         {danger ? (
                           <Badge variant="outline" className="gap-1 text-xs">
-                            <Lock className="size-3" /> Owner only
+                            <Lock className="size-3" /> {t('matrix.ownerOnly')}
                           </Badge>
                         ) : (
                           <span className={`rounded px-1.5 py-0.5 text-[10px] ${toneClass[actionTone(p.code)]}`}>

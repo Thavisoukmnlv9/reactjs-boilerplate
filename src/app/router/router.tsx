@@ -5,38 +5,41 @@ import {
   createRouter,
   Outlet,
   redirect,
+  retainSearchParams,
 } from '@tanstack/react-router'
 import { z } from 'zod'
 
-import { meQueryOptions, tokenStorage } from '@/core/access'
-import { tableSearchBase } from '@/shared/table/table-url-state'
+import { syncLanguage } from '@/app/i18n/language-sync'
 import { AuthLayout } from '@/app/layouts/auth-layout'
 import { AppLayout } from '@/app/router/app-layout'
-import { NotFound } from '@/app/router/not-found'
-import { RootErrorComponent } from '@/app/router/root-error-boundary'
 import { appFeatureRoutes } from '@/app/router/feature-routes'
-
+import { NotFound } from '@/app/router/not-found'
+import { RootComponent } from '@/app/router/root-component'
+import { RootErrorComponent } from '@/app/router/root-error-boundary'
+import { LANGUAGE_CODES } from '@/config/languages'
+import { meQueryOptions, tokenStorage } from '@/core/access'
+import { PERMISSIONS } from '@/core/constants/permissions'
+import { AcceptInvitePage } from '@/features/auth/pages/accept-invite-page'
+import { ForgotPasswordPage } from '@/features/auth/pages/forgot-password-page'
 import { LoginPage } from '@/features/auth/pages/login-page'
 import { RegisterPage } from '@/features/auth/pages/register-page'
-import { ForgotPasswordPage } from '@/features/auth/pages/forgot-password-page'
 import { ResetPasswordPage } from '@/features/auth/pages/reset-password-page'
-import { AcceptInvitePage } from '@/features/auth/pages/accept-invite-page'
-import { CreateOrganizationPage } from '@/features/onboarding/pages/create-organization-page'
-import { DashboardPage } from '@/features/dashboard/pages/dashboard-page'
-import { PERMISSIONS } from '@/core/constants/permissions'
-import { RolesPage } from '@/features/roles/pages/roles-page'
-import { RoleCreatePage } from '@/features/roles/pages/role-create-page'
-import { RoleDetailPage } from '@/features/roles/pages/role-detail-page'
-import { RoleEditPage } from '@/features/roles/pages/role-edit-page'
-import { BranchesPage } from '@/features/branches/pages/branches-page'
 import { BranchCreatePage } from '@/features/branches/pages/branch-create-page'
 import { BranchEditPage } from '@/features/branches/pages/branch-edit-page'
+import { BranchesPage } from '@/features/branches/pages/branches-page'
+import { DashboardPage } from '@/features/dashboard/pages/dashboard-page'
+import { CreateOrganizationPage } from '@/features/onboarding/pages/create-organization-page'
 import { PoliciesPage } from '@/features/policies/pages/policies-page'
 import { PolicyCreatePage } from '@/features/policies/pages/policy-create-page'
 import { PolicyEditPage } from '@/features/policies/pages/policy-edit-page'
-import { UsersPage } from '@/features/users/pages/users-page'
+import { RoleCreatePage } from '@/features/roles/pages/role-create-page'
+import { RoleDetailPage } from '@/features/roles/pages/role-detail-page'
+import { RoleEditPage } from '@/features/roles/pages/role-edit-page'
+import { RolesPage } from '@/features/roles/pages/roles-page'
 import { UserCreatePage } from '@/features/users/pages/user-create-page'
 import { UserDetailPage } from '@/features/users/pages/user-detail-page'
+import { UsersPage } from '@/features/users/pages/users-page'
+import { tableSearchBase } from '@/shared/table/table-url-state'
 
 export interface RouterContext {
   queryClient: QueryClient
@@ -46,8 +49,22 @@ const internalPath = z
   .string()
   .refine((v) => v.startsWith('/') && !v.startsWith('//'), 'must be an internal path')
 
+// The active language is carried in the URL as `?lang=`. `retainSearchParams`
+// makes every Link/navigate/redirect preserve it without call-site changes, and
+// the root `beforeLoad` applies it to i18next before any route renders — so deep
+// links and back/forward land in the right language on first paint. An invalid
+// value is neutralized by `.catch(undefined)` (falls back to the detector).
+const rootSearchSchema = z.object({
+  lang: z.enum(LANGUAGE_CODES).optional().catch(undefined),
+})
+
 export const rootRoute = createRootRouteWithContext<RouterContext>()({
-  component: () => <Outlet />,
+  validateSearch: rootSearchSchema,
+  search: { middlewares: [retainSearchParams(['lang'])] },
+  beforeLoad: ({ search }) => {
+    syncLanguage(search.lang)
+  },
+  component: RootComponent,
   notFoundComponent: NotFound,
   errorComponent: RootErrorComponent,
 })

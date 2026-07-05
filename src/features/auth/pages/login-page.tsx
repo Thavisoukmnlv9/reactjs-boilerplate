@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { z } from 'zod'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,24 +13,21 @@ import { appConfig } from '@/config/app-config'
 import { useLogin } from '@/core/access'
 import { ApiError } from '@/core/api/api-error'
 import { DevQuickLogin } from '@/features/auth/components/dev-quick-login'
-
-const schema = z.object({
-  email: z.string().min(1, 'Email is required').email('Enter a valid email'),
-  password: z.string().min(1, 'Password is required'),
-})
-type Values = z.infer<typeof schema>
+import { makeLoginSchema, type LoginFormValues } from '@/features/auth/schema'
 
 export function LoginPage() {
+  const { t } = useTranslation('auth')
   const login = useLogin()
   const navigate = useNavigate()
   const search = useSearch({ strict: false }) as { returnTo?: string }
   const [quickEmail, setQuickEmail] = useState<string | null>(null)
+  const schema = useMemo(() => makeLoginSchema(t), [t])
   const {
     register,
     handleSubmit,
     setValue,
     formState: { errors },
-  } = useForm<Values>({ resolver: zodResolver(schema) })
+  } = useForm<LoginFormValues>({ resolver: zodResolver(schema) })
 
   function goAfterLogin() {
     if (search.returnTo?.startsWith('/') && !search.returnTo.startsWith('//')) {
@@ -42,7 +39,7 @@ export function LoginPage() {
 
   function showLoginError(e: unknown) {
     toast.error(
-      e instanceof ApiError && e.status === 401 ? 'Invalid email or password' : (e as Error).message
+      e instanceof ApiError && e.status === 401 ? t('signIn.invalidCredentials') : (e as Error).message
     )
   }
 
@@ -71,32 +68,32 @@ export function LoginPage() {
     <Card>
       <CardHeader className="text-center">
         <CardTitle className="text-xl">{appConfig.name}</CardTitle>
-        <CardDescription>Sign in to your account</CardDescription>
+        <CardDescription>{t('signIn.title')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
           <div className="space-y-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" placeholder="you@company.com" {...register('email')} />
+            <Label htmlFor="email">{t('signIn.email')}</Label>
+            <Input id="email" type="email" autoComplete="email" placeholder={t('signIn.emailPlaceholder')} {...register('email')} />
             {errors.email ? <p className="text-destructive text-xs">{errors.email.message}</p> : null}
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('signIn.password')}</Label>
               <Link to="/forgot-password" className="text-muted-foreground text-xs hover:underline">
-                Forgot?
+                {t('signIn.forgot')}
               </Link>
             </div>
             <Input id="password" type="password" autoComplete="current-password" {...register('password')} />
             {errors.password ? <p className="text-destructive text-xs">{errors.password.message}</p> : null}
           </div>
           <Button type="submit" className="w-full" disabled={login.isPending}>
-            {login.isPending ? 'Signing in…' : 'Sign in'}
+            {login.isPending ? t('signIn.submitting') : t('signIn.submit')}
           </Button>
           <p className="text-muted-foreground text-center text-sm">
-            No account?{' '}
+            {t('signIn.noAccount')}{' '}
             <Link to="/register" className="text-foreground font-medium hover:underline">
-              Create one
+              {t('signIn.createOne')}
             </Link>
           </p>
         </form>

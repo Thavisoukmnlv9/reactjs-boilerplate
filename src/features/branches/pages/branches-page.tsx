@@ -1,6 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { Archive, ArchiveRestore, Building2, Layers, Pencil, Plus, Star, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { PageHeader } from '@/components/common/page-header'
@@ -44,12 +45,13 @@ interface BranchesSearch extends TableSearchState {
 }
 
 const HIDEABLE = [
-  { id: 'code', label: 'Code' },
-  { id: 'vertical', label: 'Vertical' },
-  { id: 'is_active', label: 'Status' },
-]
+  { id: 'code', labelKey: 'columns.code' },
+  { id: 'vertical', labelKey: 'columns.vertical' },
+  { id: 'is_active', labelKey: 'columns.status' },
+] as const
 
 export function BranchesPage() {
+  const { t } = useTranslation(['branches', 'common'])
   const { search, pageIndex, pageSize, setPagination, setSort, setQuery, setFilter, openCreate, openEdit, closeSheet } =
     useTableUrlState<BranchesSearch>()
 
@@ -83,22 +85,22 @@ export function BranchesPage() {
   const editBranchQuery = useBranchQuery(editing ? search.sheetId : undefined)
 
   async function handleMakeMain(id: string, name: string) {
-    const ok = await confirm({ title: `Make "${name}" the main branch?`, description: 'The current main branch is demoted.', confirmText: 'Make main' })
+    const ok = await confirm({ title: t('confirm.makeMainTitle', { name }), description: t('confirm.makeMainDescription'), confirmText: t('confirm.makeMainConfirm') })
     if (!ok) return
     try {
       await makeMain.mutateAsync(id)
-      toast.success('Main branch updated')
+      toast.success(t('toasts.mainUpdated'))
     } catch (e) {
       toast.error((e as Error).message)
     }
   }
 
   async function handleDelete(id: string, name: string) {
-    const ok = await confirm({ title: `Delete "${name}"?`, description: 'This permanently removes the branch.', confirmText: 'Delete', confirmVariant: 'destructive' })
+    const ok = await confirm({ title: t('confirm.deleteTitle', { name }), description: t('confirm.deleteDescription'), confirmText: t('common:actions.delete'), confirmVariant: 'destructive' })
     if (!ok) return
     try {
       await del.mutateAsync(id)
-      toast.success('Branch deleted')
+      toast.success(t('toasts.deleted'))
     } catch (e) {
       toast.error((e as Error).message)
     }
@@ -107,9 +109,9 @@ export function BranchesPage() {
   async function runBulk(action: 'archive' | 'activate' | 'delete', verb: string, destructive = false) {
     if (destructive) {
       const ok = await confirm({
-        title: `Delete ${selection.selectedCount} branch${selection.selectedCount === 1 ? '' : 'es'}?`,
-        description: 'The main branch is skipped. This cannot be undone.',
-        confirmText: 'Delete',
+        title: t('confirm.deleteMany', { count: selection.selectedCount }),
+        description: t('confirm.deleteManyDescription'),
+        confirmText: t('common:actions.delete'),
         confirmVariant: 'destructive',
       })
       if (!ok) return
@@ -138,7 +140,7 @@ export function BranchesPage() {
     const base: ColumnDef<BranchView, unknown>[] = [
       {
         id: 'name',
-        header: 'Branch',
+        header: t('columns.name'),
         enableSorting: true,
         cell: ({ row }) => {
           const b = row.original
@@ -150,7 +152,7 @@ export function BranchesPage() {
                   {b.name}
                   {b.is_main ? (
                     <Badge variant="secondary" className="gap-1 text-[10px]">
-                      <Star className="size-3" /> Main
+                      <Star className="size-3" /> {t('main')}
                     </Badge>
                   ) : null}
                 </span>
@@ -160,14 +162,14 @@ export function BranchesPage() {
           )
         },
       },
-      { id: 'code', header: 'Code', enableSorting: true, cell: ({ row }) => <span className="font-mono text-muted-foreground text-sm">{row.original.code ?? '—'}</span> },
+      { id: 'code', header: t('columns.code'), enableSorting: true, cell: ({ row }) => <span className="font-mono text-muted-foreground text-sm">{row.original.code ?? '—'}</span> },
       {
         id: 'vertical',
-        header: 'Vertical',
+        header: t('columns.vertical'),
         enableSorting: true,
         cell: ({ row }) => <span className="text-muted-foreground text-sm capitalize">{row.original.vertical?.toLowerCase() ?? '—'}</span>,
       },
-      { id: 'is_active', header: 'Status', enableSorting: true, cell: ({ row }) => <StatusChip status={row.original.is_active ? 'Active' : 'Archived'} /> },
+      { id: 'is_active', header: t('columns.status'), enableSorting: true, cell: ({ row }) => <StatusChip status={row.original.is_active ? 'Active' : 'Archived'} /> },
       {
         id: 'actions',
         header: '',
@@ -176,9 +178,9 @@ export function BranchesPage() {
         cell: ({ row }) => {
           const b = row.original
           const actions: RowAction[] = []
-          if (canManage && !b.is_main) actions.push({ label: 'Make main', icon: Star, onClick: () => void handleMakeMain(b.id, b.name) })
-          if (canManage) actions.push({ label: 'Edit', icon: Pencil, onClick: () => openEdit(b.id) })
-          if (canDelete && !b.is_main) actions.push({ label: 'Delete', icon: Trash2, variant: 'destructive', onClick: () => void handleDelete(b.id, b.name) })
+          if (canManage && !b.is_main) actions.push({ label: t('actions.makeMain'), icon: Star, onClick: () => void handleMakeMain(b.id, b.name) })
+          if (canManage) actions.push({ label: t('actions.edit'), icon: Pencil, onClick: () => openEdit(b.id) })
+          if (canDelete && !b.is_main) actions.push({ label: t('actions.delete'), icon: Trash2, variant: 'destructive', onClick: () => void handleDelete(b.id, b.name) })
           return actions.length ? <div className="flex justify-end"><RowActions actions={actions} /></div> : null
         },
       },
@@ -186,38 +188,38 @@ export function BranchesPage() {
     const visible = base.filter((c) => !hidden.has(c.id as string))
     return canBulk ? [createSelectColumn(selection, 'branch'), ...visible] : visible
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hidden, canManage, canDelete, canBulk, selection])
+  }, [hidden, canManage, canDelete, canBulk, selection, t])
 
   const statItems = [
-    { id: 'total', label: 'Total branches', value: statsQuery.data?.total ?? 0, icon: <Building2 /> },
-    { id: 'active', label: 'Active', value: statsQuery.data?.active ?? 0, tone: 'success' as const },
-    { id: 'archived', label: 'Archived', value: statsQuery.data?.archived ?? 0, tone: 'warning' as const },
-    { id: 'verticals', label: 'Verticals', value: Object.keys(statsQuery.data?.by_vertical ?? {}).length, icon: <Layers /> },
+    { id: 'total', label: t('stats.total'), value: statsQuery.data?.total ?? 0, icon: <Building2 /> },
+    { id: 'active', label: t('stats.active'), value: statsQuery.data?.active ?? 0, tone: 'success' as const },
+    { id: 'archived', label: t('stats.archived'), value: statsQuery.data?.archived ?? 0, tone: 'warning' as const },
+    { id: 'verticals', label: t('stats.verticals'), value: Object.keys(statsQuery.data?.by_vertical ?? {}).length, icon: <Layers /> },
   ]
 
   const chips = []
-  if (search.status) chips.push({ id: 'status', label: `Status: ${search.status}`, onRemove: () => setFilter('status', undefined) })
-  if (search.vertical) chips.push({ id: 'vertical', label: `Vertical: ${search.vertical}`, onRemove: () => setFilter('vertical', undefined) })
+  if (search.status) chips.push({ id: 'status', label: t('filters.statusChip', { value: search.status }), onRemove: () => setFilter('status', undefined) })
+  if (search.vertical) chips.push({ id: 'vertical', label: t('filters.verticalChip', { value: search.vertical }), onRemove: () => setFilter('vertical', undefined) })
 
   const hasFilters = Boolean(search.q || search.status || search.vertical)
   const unfilteredEmpty = !branchesQuery.isLoading && !branchesQuery.isError && total === 0 && !hasFilters
 
   const bulkActions: BulkAction[] = []
   if (canBulk) {
-    bulkActions.push({ label: 'Activate', icon: ArchiveRestore, onClick: () => void runBulk('activate', 'activated') })
-    bulkActions.push({ label: 'Archive', icon: Archive, onClick: () => void runBulk('archive', 'archived') })
-    bulkActions.push({ label: 'Delete', icon: Trash2, variant: 'destructive', onClick: () => void runBulk('delete', 'deleted', true) })
+    bulkActions.push({ label: t('actions.activate'), icon: ArchiveRestore, onClick: () => void runBulk('activate', 'activated') })
+    bulkActions.push({ label: t('actions.archive'), icon: Archive, onClick: () => void runBulk('archive', 'archived') })
+    bulkActions.push({ label: t('common:actions.delete'), icon: Trash2, variant: 'destructive', onClick: () => void runBulk('delete', 'deleted', true) })
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Branches"
-        description="Locations your members operate. Exactly one branch is the main branch."
+        title={t('title')}
+        description={t('subtitle')}
         actions={
           canManage ? (
             <Button size="sm" onClick={openCreate}>
-              <Plus className="size-4" /> New branch
+              <Plus className="size-4" /> {t('new')}
             </Button>
           ) : undefined
         }
@@ -228,9 +230,9 @@ export function BranchesPage() {
       {unfilteredEmpty ? (
         <EmptyState
           icon={<Building2 className="size-7" />}
-          title="No branches yet"
-          description="Create your first branch to start assigning members and commerce settings."
-          action={canManage ? <Button onClick={openCreate}><Plus className="size-4" /> New branch</Button> : undefined}
+          title={t('empty.title')}
+          description={t('empty.description')}
+          action={canManage ? <Button onClick={openCreate}><Plus className="size-4" /> {t('new')}</Button> : undefined}
         />
       ) : branchesQuery.isError ? (
         <ErrorState message={(branchesQuery.error as Error)?.message} onRetry={() => void branchesQuery.refetch()} />
@@ -239,23 +241,23 @@ export function BranchesPage() {
           <TableToolbar
             left={
               <>
-                <TableSearch value={search.q ?? ''} onChange={setQuery} placeholder="Search name or code…" />
+                <TableSearch value={search.q ?? ''} onChange={setQuery} placeholder={t('filters.searchPlaceholder')} />
                 <Select value={search.status ?? ALL} onValueChange={(v) => setFilter('status', v === ALL ? undefined : v)}>
                   <SelectTrigger className="h-9 w-[140px]">
-                    <SelectValue placeholder="Status" />
+                    <SelectValue placeholder={t('filters.status')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={ALL}>All statuses</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
+                    <SelectItem value={ALL}>{t('filters.allStatuses')}</SelectItem>
+                    <SelectItem value="active">{t('status.active')}</SelectItem>
+                    <SelectItem value="archived">{t('status.archived')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={search.vertical ?? ALL} onValueChange={(v) => setFilter('vertical', v === ALL ? undefined : v)}>
                   <SelectTrigger className="h-9 w-[140px]">
-                    <SelectValue placeholder="Vertical" />
+                    <SelectValue placeholder={t('filters.vertical')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={ALL}>All verticals</SelectItem>
+                    <SelectItem value={ALL}>{t('filters.allVerticals')}</SelectItem>
                     {BRANCH_VERTICALS.map((v) => (
                       <SelectItem key={v} value={v} className="capitalize">
                         {v.toLowerCase()}
@@ -269,7 +271,7 @@ export function BranchesPage() {
             right={
               <>
                 <TableColumnVisibility
-                  columns={HIDEABLE.map((c) => ({ id: c.id, label: c.label, visible: !hidden.has(c.id), hideable: true }))}
+                  columns={HIDEABLE.map((c) => ({ id: c.id, label: t(c.labelKey), visible: !hidden.has(c.id), hideable: true }))}
                   onChange={(id, visible) =>
                     setHidden((prev) => {
                       const next = new Set(prev)
@@ -302,7 +304,7 @@ export function BranchesPage() {
             enableRowSelection={false}
             enableFiltering={false}
             keyExtractor={(b) => b.id}
-            emptyMessage="No branches match your filters."
+            emptyMessage={t('empty.filtered')}
           />
         </div>
       )}
@@ -314,9 +316,9 @@ export function BranchesPage() {
       <Sheet open={search.sheet === 'create' || editing} onOpenChange={(o) => (o ? null : closeSheet())}>
         <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-xl">
           <SheetHeader className="border-b">
-            <SheetTitle>{search.sheet === 'create' ? 'New branch' : 'Edit branch'}</SheetTitle>
+            <SheetTitle>{search.sheet === 'create' ? t('form.createTitle') : t('form.editTitle')}</SheetTitle>
             <SheetDescription>
-              {search.sheet === 'create' ? 'Add a location with its own commerce settings.' : 'Update this branch and its commerce settings.'}
+              {search.sheet === 'create' ? t('form.createDescription') : t('form.editDescription')}
             </SheetDescription>
           </SheetHeader>
           {search.sheet === 'create' ? (

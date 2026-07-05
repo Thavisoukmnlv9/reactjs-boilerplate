@@ -1,36 +1,37 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
+import { useMemo } from 'react'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { authService } from '@/core/access'
-
-const schema = z.object({ email: z.string().min(1, 'Email is required').email('Enter a valid email') })
-type Values = z.infer<typeof schema>
+import { makeForgotSchema, type ForgotFormValues } from '@/features/auth/schema'
 
 export function ForgotPasswordPage() {
-  const forgot = useMutation({ mutationFn: (v: Values) => authService.forgotPassword(v.email) })
+  const { t } = useTranslation('auth')
+  const forgot = useMutation({ mutationFn: (v: ForgotFormValues) => authService.forgotPassword(v.email) })
+  const schema = useMemo(() => makeForgotSchema(t), [t])
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<Values>({ resolver: zodResolver(schema) })
+  } = useForm<ForgotFormValues>({ resolver: zodResolver(schema) })
 
   if (forgot.isSuccess) {
     return (
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Check your email</CardTitle>
-          <CardDescription>If an account exists, we've sent a reset link.</CardDescription>
+          <CardTitle className="text-xl">{t('forgot.sentTitle')}</CardTitle>
+          <CardDescription>{t('forgot.sentSubtitle')}</CardDescription>
         </CardHeader>
         <CardContent className="text-center">
           <Button asChild variant="outline">
-            <Link to="/login">Back to sign in</Link>
+            <Link to="/login">{t('forgot.backToSignIn')}</Link>
           </Button>
         </CardContent>
       </Card>
@@ -40,22 +41,22 @@ export function ForgotPasswordPage() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-xl">Reset your password</CardTitle>
-        <CardDescription>We'll email you a reset link.</CardDescription>
+        <CardTitle className="text-xl">{t('forgot.title')}</CardTitle>
+        <CardDescription>{t('forgot.subtitle')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit((v) => forgot.mutate(v))} className="space-y-4" noValidate>
           <div className="space-y-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" placeholder="you@company.com" {...register('email')} />
+            <Label htmlFor="email">{t('forgot.email')}</Label>
+            <Input id="email" type="email" autoComplete="email" placeholder={t('forgot.emailPlaceholder')} {...register('email')} />
             {errors.email ? <p className="text-destructive text-xs">{errors.email.message}</p> : null}
           </div>
           <Button type="submit" className="w-full" disabled={forgot.isPending}>
-            {forgot.isPending ? 'Sending…' : 'Send reset link'}
+            {forgot.isPending ? t('forgot.submitting') : t('forgot.submit')}
           </Button>
           <p className="text-muted-foreground text-center text-sm">
             <Link to="/login" className="hover:underline">
-              Back to sign in
+              {t('forgot.backToSignIn')}
             </Link>
           </p>
         </form>

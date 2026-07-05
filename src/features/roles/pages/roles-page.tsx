@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Pencil, Plus, Shield, ShieldCheck, Trash2 } from 'lucide-react'
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { PageHeader } from '@/components/common/page-header'
@@ -30,6 +31,7 @@ import { toQueryString, useTableUrlState } from '@/shared/table/table-url-state'
 import { useTableSelection } from '@/shared/table/use-table-selection'
 
 export function RolesPage() {
+  const { t } = useTranslation(['roles', 'common'])
   const navigate = useNavigate()
   const { search, pageIndex, pageSize, setPagination, setSort, setQuery } = useTableUrlState()
 
@@ -54,11 +56,11 @@ export function RolesPage() {
   const del = useDeleteRole()
 
   async function handleDelete(id: string, name: string) {
-    const ok = await confirm({ title: `Delete the "${name}" role?`, description: 'This cannot be undone.', confirmText: 'Delete', confirmVariant: 'destructive' })
+    const ok = await confirm({ title: t('confirm.deleteTitle', { name }), description: t('confirm.deleteDescription'), confirmText: t('common:actions.delete'), confirmVariant: 'destructive' })
     if (!ok) return
     try {
       await del.mutateAsync(id)
-      toast.success('Role deleted')
+      toast.success(t('toasts.deleted'))
     } catch (e) {
       toast.error((e as Error).message)
     }
@@ -66,9 +68,9 @@ export function RolesPage() {
 
   async function handleBulkDelete() {
     const ok = await confirm({
-      title: `Delete ${selection.selectedCount} role${selection.selectedCount === 1 ? '' : 's'}?`,
-      description: 'System roles and roles still in use are skipped.',
-      confirmText: 'Delete',
+      title: t('confirm.deleteMany', { count: selection.selectedCount }),
+      description: t('confirm.deleteManyDescription'),
+      confirmText: t('common:actions.delete'),
       confirmVariant: 'destructive',
     })
     if (!ok) return
@@ -95,7 +97,7 @@ export function RolesPage() {
     const base: ColumnDef<RoleView, unknown>[] = [
       {
         id: 'name',
-        header: 'Role',
+        header: t('columns.role'),
         enableSorting: true,
         cell: ({ row }) => {
           const r = row.original
@@ -109,7 +111,7 @@ export function RolesPage() {
                   <button type="button" className="truncate hover:underline" onClick={() => void navigate({ to: '/roles/$roleId', params: { roleId: r.id } })}>
                     {r.name}
                   </button>
-                  {r.is_system ? <Badge variant="secondary" className="text-[10px]">System</Badge> : null}
+                  {r.is_system ? <Badge variant="secondary" className="text-[10px]">{t('columns.system')}</Badge> : null}
                 </div>
                 {r.description ? <div className="truncate text-muted-foreground text-xs">{r.description}</div> : null}
               </div>
@@ -117,14 +119,14 @@ export function RolesPage() {
           )
         },
       },
-      { id: 'permissions', header: 'Permissions', enableSorting: false, cell: ({ row }) => <span className="tabular-nums text-muted-foreground text-sm">{row.original.permission_codes.length}</span> },
-      { id: 'members', header: 'Members', enableSorting: false, cell: ({ row }) => <span className="tabular-nums text-muted-foreground text-sm">{row.original.member_count}</span> },
+      { id: 'permissions', header: t('columns.permissions'), enableSorting: false, cell: ({ row }) => <span className="tabular-nums text-muted-foreground text-sm">{row.original.permission_codes.length}</span> },
+      { id: 'members', header: t('columns.members'), enableSorting: false, cell: ({ row }) => <span className="tabular-nums text-muted-foreground text-sm">{row.original.member_count}</span> },
       {
         id: 'is_system',
-        header: 'Type',
+        header: t('columns.type'),
         enableSorting: true,
         cell: ({ row }) => (
-          <Badge variant={row.original.is_system ? 'secondary' : 'outline'}>{row.original.is_system ? 'System' : 'Custom'}</Badge>
+          <Badge variant={row.original.is_system ? 'secondary' : 'outline'}>{row.original.is_system ? t('columns.system') : t('columns.custom')}</Badge>
         ),
       },
       {
@@ -135,21 +137,21 @@ export function RolesPage() {
         cell: ({ row }) => {
           const r = row.original
           if (!canManage || r.is_system) return null
-          const actions: RowAction[] = [{ label: 'Edit', icon: Pencil, to: '/roles/$roleId/edit', params: { roleId: r.id } }]
-          if (r.member_count === 0) actions.push({ label: 'Delete', icon: Trash2, variant: 'destructive', onClick: () => void handleDelete(r.id, r.name) })
+          const actions: RowAction[] = [{ label: t('common:actions.edit'), icon: Pencil, to: '/roles/$roleId/edit', params: { roleId: r.id } }]
+          if (r.member_count === 0) actions.push({ label: t('common:actions.delete'), icon: Trash2, variant: 'destructive', onClick: () => void handleDelete(r.id, r.name) })
           return <div className="flex justify-end"><RowActions actions={actions} /></div>
         },
       },
     ]
     return canBulk ? [createSelectColumn(selection, 'role'), ...base] : base
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canManage, canBulk, selection, navigate])
+  }, [canManage, canBulk, selection, navigate, t])
 
   const statItems = [
-    { id: 'total', label: 'Total roles', value: statsQuery.data?.total ?? 0, icon: <Shield /> },
-    { id: 'system', label: 'System', value: statsQuery.data?.system ?? 0 },
-    { id: 'custom', label: 'Custom', value: statsQuery.data?.custom ?? 0, tone: 'accent' as const },
-    { id: 'unused', label: 'Unused', value: statsQuery.data?.unused ?? 0, tone: 'warning' as const },
+    { id: 'total', label: t('stats.total'), value: statsQuery.data?.total ?? 0, icon: <Shield /> },
+    { id: 'system', label: t('stats.system'), value: statsQuery.data?.system ?? 0 },
+    { id: 'custom', label: t('stats.custom'), value: statsQuery.data?.custom ?? 0, tone: 'accent' as const },
+    { id: 'unused', label: t('stats.unused'), value: statsQuery.data?.unused ?? 0, tone: 'warning' as const },
   ]
 
   const hasFilters = Boolean(search.q)
@@ -158,12 +160,12 @@ export function RolesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Roles"
-        description="Roles bundle permissions. Assign them to members to control access."
+        title={t('title')}
+        description={t('subtitle')}
         actions={
           canManage ? (
             <Button size="sm" onClick={() => void navigate({ to: '/roles/new' })}>
-              <Plus className="size-4" /> New role
+              <Plus className="size-4" /> {t('newRole')}
             </Button>
           ) : undefined
         }
@@ -174,16 +176,16 @@ export function RolesPage() {
       {unfilteredEmpty ? (
         <EmptyState
           icon={<ShieldCheck className="size-7" />}
-          title="No roles yet"
-          description="Create a custom role to grant members a tailored set of permissions."
-          action={canManage ? <Button onClick={() => void navigate({ to: '/roles/new' })}><Plus className="size-4" /> New role</Button> : undefined}
+          title={t('empty.title')}
+          description={t('empty.description')}
+          action={canManage ? <Button onClick={() => void navigate({ to: '/roles/new' })}><Plus className="size-4" /> {t('newRole')}</Button> : undefined}
         />
       ) : rolesQuery.isError ? (
         <ErrorState message={(rolesQuery.error as Error)?.message} onRetry={() => void rolesQuery.refetch()} />
       ) : (
         <div>
           <TableToolbar
-            left={<TableSearch value={search.q ?? ''} onChange={setQuery} placeholder="Search roles…" />}
+            left={<TableSearch value={search.q ?? ''} onChange={setQuery} placeholder={t('actions.searchPlaceholder')} />}
             right={canExport ? <TableExportMenu onExport={{ csv: handleExport }} /> : null}
           />
           <DataTable
@@ -204,7 +206,7 @@ export function RolesPage() {
             enableRowSelection={false}
             enableFiltering={false}
             keyExtractor={(r) => r.id}
-            emptyMessage="No roles match your search."
+            emptyMessage={t('empty.noSearchResults')}
           />
         </div>
       )}
@@ -214,7 +216,7 @@ export function RolesPage() {
           selectedCount={selection.selectedCount}
           totalCount={total}
           onClearSelection={selection.clear}
-          actions={[{ label: 'Delete', icon: Trash2, variant: 'destructive', onClick: () => void handleBulkDelete() }]}
+          actions={[{ label: t('common:actions.delete'), icon: Trash2, variant: 'destructive', onClick: () => void handleBulkDelete() }]}
         />
       ) : null}
     </div>

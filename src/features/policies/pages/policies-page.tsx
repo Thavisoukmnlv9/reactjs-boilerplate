@@ -1,6 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { Pencil, Plus, ScrollText, ShieldAlert, Trash2 } from 'lucide-react'
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { PageHeader } from '@/components/common/page-header'
@@ -42,6 +43,7 @@ interface PoliciesSearch extends TableSearchState {
 }
 
 export function PoliciesPage() {
+  const { t } = useTranslation(['policies', 'common'])
   const { search, pageIndex, pageSize, setPagination, setSort, setFilter, openCreate, openEdit, closeSheet } =
     useTableUrlState<PoliciesSearch>()
 
@@ -60,7 +62,7 @@ export function PoliciesPage() {
   const statsQuery = usePolicyStatsQuery()
   const { data: rolesData } = useRolesQuery({ limit: 100 })
   const roles = rolesData?.items ?? []
-  const roleName = (id: string | null) => (id ? roles.find((r) => r.id === id)?.name ?? 'Role-scoped' : 'Everyone')
+  const roleName = (id: string | null) => (id ? roles.find((r) => r.id === id)?.name ?? t('columns.roleScoped') : t('columns.everyone'))
 
   const items = policiesQuery.data?.items ?? []
   const total = policiesQuery.data?.total ?? 0
@@ -73,11 +75,11 @@ export function PoliciesPage() {
   const editPolicyQuery = usePolicyQuery(editing ? search.sheetId : undefined)
 
   async function handleDelete(id: string) {
-    const ok = await confirm({ title: 'Delete this policy?', description: 'Access falls back to roles alone.', confirmText: 'Delete', confirmVariant: 'destructive' })
+    const ok = await confirm({ title: t('confirm.deleteTitle'), description: t('confirm.deleteDescription'), confirmText: t('common:actions.delete'), confirmVariant: 'destructive' })
     if (!ok) return
     try {
       await del.mutateAsync(id)
-      toast.success('Policy deleted')
+      toast.success(t('toasts.deleted'))
     } catch (e) {
       toast.error((e as Error).message)
     }
@@ -85,9 +87,9 @@ export function PoliciesPage() {
 
   async function handleBulkDelete() {
     const ok = await confirm({
-      title: `Delete ${selection.selectedCount} polic${selection.selectedCount === 1 ? 'y' : 'ies'}?`,
-      description: 'This cannot be undone.',
-      confirmText: 'Delete',
+      title: t('confirm.bulkDeleteTitle', { count: selection.selectedCount }),
+      description: t('confirm.bulkDeleteDescription'),
+      confirmText: t('common:actions.delete'),
       confirmVariant: 'destructive',
     })
     if (!ok) return
@@ -115,30 +117,30 @@ export function PoliciesPage() {
 
   const columns = useMemo<ColumnDef<PolicyView, unknown>[]>(() => {
     const base: ColumnDef<PolicyView, unknown>[] = [
-      { id: 'effect', header: 'Effect', enableSorting: true, size: 90, cell: ({ row }) => <PolicyEffectBadge effect={row.original.effect} /> },
+      { id: 'effect', header: t('columns.effect'), enableSorting: true, size: 90, cell: ({ row }) => <PolicyEffectBadge effect={row.original.effect} /> },
       {
         id: 'action',
-        header: 'Rule',
+        header: t('columns.rule'),
         enableSorting: true,
         cell: ({ row }) => {
           const p = row.original
           return (
             <div className="min-w-0">
               <div className="truncate text-sm">
-                <span className="font-mono font-medium">{p.action}</span> on <span className="font-mono font-medium">{p.subject}</span>
+                <span className="font-mono font-medium">{p.action}</span> {t('columns.ruleOn')} <span className="font-mono font-medium">{p.subject}</span>
               </div>
               {p.description ? <div className="truncate text-muted-foreground text-xs">{p.description}</div> : null}
             </div>
           )
         },
       },
-      { id: 'applies_to', header: 'Applies to', enableSorting: false, cell: ({ row }) => <span className="text-muted-foreground text-sm">{roleName(row.original.role_id)}</span> },
+      { id: 'applies_to', header: t('columns.appliesTo'), enableSorting: false, cell: ({ row }) => <span className="text-muted-foreground text-sm">{roleName(row.original.role_id)}</span> },
       {
         id: 'conditions',
-        header: 'Conditions',
+        header: t('columns.conditions'),
         enableSorting: false,
         cell: ({ row }) =>
-          row.original.conditions ? <Badge variant="outline">Conditional</Badge> : <span className="text-muted-foreground text-sm">—</span>,
+          row.original.conditions ? <Badge variant="outline">{t('columns.conditional')}</Badge> : <span className="text-muted-foreground text-sm">—</span>,
       },
       {
         id: 'actions',
@@ -148,8 +150,8 @@ export function PoliciesPage() {
         cell: ({ row }) => {
           if (!canManage) return null
           const actions: RowAction[] = [
-            { label: 'Edit', icon: Pencil, onClick: () => openEdit(row.original.id) },
-            { label: 'Delete', icon: Trash2, variant: 'destructive', onClick: () => void handleDelete(row.original.id) },
+            { label: t('common:actions.edit'), icon: Pencil, onClick: () => openEdit(row.original.id) },
+            { label: t('common:actions.delete'), icon: Trash2, variant: 'destructive', onClick: () => void handleDelete(row.original.id) },
           ]
           return <div className="flex justify-end"><RowActions actions={actions} /></div>
         },
@@ -157,18 +159,18 @@ export function PoliciesPage() {
     ]
     return canBulk ? [createSelectColumn(selection, 'policy'), ...base] : base
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canManage, canBulk, selection, roles])
+  }, [canManage, canBulk, selection, roles, t])
 
   const statItems = [
-    { id: 'total', label: 'Total policies', value: statsQuery.data?.total ?? 0, icon: <ScrollText /> },
-    { id: 'allow', label: 'Allow', value: statsQuery.data?.allow ?? 0, tone: 'success' as const },
-    { id: 'deny', label: 'Deny', value: statsQuery.data?.deny ?? 0, tone: 'danger' as const },
-    { id: 'conditional', label: 'Conditional', value: statsQuery.data?.conditional ?? 0, tone: 'accent' as const },
+    { id: 'total', label: t('stats.total'), value: statsQuery.data?.total ?? 0, icon: <ScrollText /> },
+    { id: 'allow', label: t('stats.allow'), value: statsQuery.data?.allow ?? 0, tone: 'success' as const },
+    { id: 'deny', label: t('stats.deny'), value: statsQuery.data?.deny ?? 0, tone: 'danger' as const },
+    { id: 'conditional', label: t('stats.conditional'), value: statsQuery.data?.conditional ?? 0, tone: 'accent' as const },
   ]
 
   const chips = []
-  if (search.subject) chips.push({ id: 'subject', label: `Subject: ${search.subject}`, onRemove: () => setFilter('subject', undefined) })
-  if (search.action) chips.push({ id: 'action', label: `Action: ${search.action}`, onRemove: () => setFilter('action', undefined) })
+  if (search.subject) chips.push({ id: 'subject', label: t('filters.subjectChip', { value: search.subject }), onRemove: () => setFilter('subject', undefined) })
+  if (search.action) chips.push({ id: 'action', label: t('filters.actionChip', { value: search.action }), onRemove: () => setFilter('action', undefined) })
 
   const hasFilters = Boolean(search.subject || search.action)
   const unfilteredEmpty = !policiesQuery.isLoading && !policiesQuery.isError && total === 0 && !hasFilters
@@ -176,12 +178,12 @@ export function PoliciesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Access policies"
-        description="Attribute rules layered on top of roles. DENY always wins."
+        title={t('title')}
+        description={t('subtitle')}
         actions={
           canManage ? (
             <Button size="sm" onClick={openCreate}>
-              <Plus className="size-4" /> New policy
+              <Plus className="size-4" /> {t('newPolicy')}
             </Button>
           ) : undefined
         }
@@ -192,9 +194,9 @@ export function PoliciesPage() {
       {unfilteredEmpty ? (
         <EmptyState
           icon={<ShieldAlert className="size-7" />}
-          title="No policies yet"
-          description="Roles alone control access until you add attribute-based refinements here."
-          action={canManage ? <Button onClick={openCreate}><Plus className="size-4" /> New policy</Button> : undefined}
+          title={t('empty.title')}
+          description={t('empty.description')}
+          action={canManage ? <Button onClick={openCreate}><Plus className="size-4" /> {t('newPolicy')}</Button> : undefined}
         />
       ) : policiesQuery.isError ? (
         <ErrorState message={(policiesQuery.error as Error)?.message} onRetry={() => void policiesQuery.refetch()} />
@@ -205,10 +207,10 @@ export function PoliciesPage() {
               <>
                 <Select value={search.subject ?? ALL} onValueChange={(v) => setFilter('subject', v === ALL ? undefined : v)}>
                   <SelectTrigger className="h-9 w-[150px]">
-                    <SelectValue placeholder="Subject" />
+                    <SelectValue placeholder={t('filters.subject')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={ALL}>All subjects</SelectItem>
+                    <SelectItem value={ALL}>{t('filters.allSubjects')}</SelectItem>
                     {POLICY_SUBJECTS.map((s) => (
                       <SelectItem key={s} value={s}>
                         {s}
@@ -218,10 +220,10 @@ export function PoliciesPage() {
                 </Select>
                 <Select value={search.action ?? ALL} onValueChange={(v) => setFilter('action', v === ALL ? undefined : v)}>
                   <SelectTrigger className="h-9 w-[150px]">
-                    <SelectValue placeholder="Action" />
+                    <SelectValue placeholder={t('filters.action')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={ALL}>All actions</SelectItem>
+                    <SelectItem value={ALL}>{t('filters.allActions')}</SelectItem>
                     {POLICY_ACTIONS.map((a) => (
                       <SelectItem key={a} value={a}>
                         {a}
@@ -253,7 +255,7 @@ export function PoliciesPage() {
             enableRowSelection={false}
             enableFiltering={false}
             keyExtractor={(p) => p.id}
-            emptyMessage="No policies match your filters."
+            emptyMessage={t('empty.filtered')}
           />
         </div>
       )}
@@ -263,15 +265,15 @@ export function PoliciesPage() {
           selectedCount={selection.selectedCount}
           totalCount={total}
           onClearSelection={selection.clear}
-          actions={[{ label: 'Delete', icon: Trash2, variant: 'destructive', onClick: () => void handleBulkDelete() }]}
+          actions={[{ label: t('common:actions.delete'), icon: Trash2, variant: 'destructive', onClick: () => void handleBulkDelete() }]}
         />
       ) : null}
 
       <Sheet open={search.sheet === 'create' || editing} onOpenChange={(o) => (o ? null : closeSheet())}>
         <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-xl">
           <SheetHeader className="border-b">
-            <SheetTitle>{search.sheet === 'create' ? 'New policy' : 'Edit policy'}</SheetTitle>
-            <SheetDescription>Attribute rules refine role permissions. DENY always wins.</SheetDescription>
+            <SheetTitle>{search.sheet === 'create' ? t('form.createTitle') : t('form.editTitle')}</SheetTitle>
+            <SheetDescription>{t('form.sheetDescription')}</SheetDescription>
           </SheetHeader>
           {search.sheet === 'create' ? (
             <PolicyForm key="create" mode="create" onDone={closeSheet} />

@@ -1,5 +1,6 @@
 import { Link, useParams } from '@tanstack/react-router'
 import { Pencil } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import { PageHeader } from '@/components/common/page-header'
 import { Button } from '@/components/ui/button'
@@ -10,11 +11,12 @@ import { groupByModule, labelForCode, moduleLabel } from '@/features/roles/lib/p
 import { Badge } from '@/shared/components/ui/badge'
 
 export function RoleDetailPage() {
+  const { t } = useTranslation(['roles', 'common'])
   const { roleId } = useParams({ strict: false }) as { roleId?: string }
   const { data: role, isLoading } = useRoleQuery(roleId)
   const canManage = useCan(PERMISSIONS.ROLES_MANAGE)
 
-  if (isLoading || !role) return <p className="text-muted-foreground text-sm">Loading…</p>
+  if (isLoading || !role) return <p className="text-muted-foreground text-sm">{t('common:states.loading')}</p>
 
   const grouped = groupByModule(
     role.permission_codes.map((code) => ({ id: code, code, module: code.split('.')[0] ?? 'platform', description: null }))
@@ -29,21 +31,21 @@ export function RoleDetailPage() {
           canManage && !role.is_system ? (
             <Button asChild size="sm">
               <Link to="/roles/$roleId/edit" params={{ roleId: role.id }}>
-                <Pencil className="size-4" /> Edit
+                <Pencil className="size-4" /> {t('common:actions.edit')}
               </Link>
             </Button>
           ) : undefined
         }
       />
       <div className="text-muted-foreground flex items-center gap-2 text-sm">
-        {role.is_system ? <Badge variant="secondary">System</Badge> : null}
+        {role.is_system ? <Badge variant="secondary">{t('columns.system')}</Badge> : null}
         <span>
-          {role.permission_codes.length} permissions · {role.member_count} member{role.member_count === 1 ? '' : 's'}
+          {t('detail.permissionsMembers', { permissions: role.permission_codes.length, count: role.member_count })}
         </span>
       </div>
 
       {role.permission_codes.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No permissions granted.</p>
+        <p className="text-muted-foreground text-sm">{t('detail.noPermissions')}</p>
       ) : (
         <div className="space-y-4">
           {grouped.map((g) => (

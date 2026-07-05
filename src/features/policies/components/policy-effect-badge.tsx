@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import { cn } from '@/core/utils/cn'
 import { Badge } from '@/shared/components/ui/badge'
 
@@ -7,9 +9,10 @@ import { Badge } from '@/shared/components/ui/badge'
  * fail-secure winner, so it always shows destructive.
  */
 export function PolicyEffectBadge({ effect, className }: { effect: 'ALLOW' | 'DENY'; className?: string }) {
+  const { t } = useTranslation('policies')
   return (
     <Badge variant={effect === 'DENY' ? 'destructive' : 'success'} className={cn('font-medium', className)}>
-      {effect}
+      {effect === 'DENY' ? t('effect.deny') : t('effect.allow')}
     </Badge>
   )
 }

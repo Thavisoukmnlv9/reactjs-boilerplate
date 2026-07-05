@@ -17,19 +17,29 @@ export function DashboardPage() {
         description={user ? `${t('welcome')}, ${user.name}` : t('welcome')}
       />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label={t('stats.users')} value="1,248" icon={Users} hint="+12% this month" />
+        <StatCard
+          label={t('stats.users')}
+          value="1,248"
+          icon={Users}
+          hint={t('trend.monthly', { delta: '+12%' })}
+        />
         <StatCard
           label={t('stats.revenue')}
           value="$34.2k"
           icon={DollarSign}
-          hint="+4.1% this month"
+          hint={t('trend.monthly', { delta: '+4.1%' })}
         />
-        <StatCard label={t('stats.orders')} value="312" icon={ShoppingCart} hint="+8 today" />
+        <StatCard
+          label={t('stats.orders')}
+          value="312"
+          icon={ShoppingCart}
+          hint={t('trend.today', { delta: '+8' })}
+        />
         <StatCard
           label={t('stats.churn')}
           value="2.4%"
           icon={TrendingDown}
-          hint="-0.3% this month"
+          hint={t('trend.monthly', { delta: '-0.3%' })}
         />
       </div>
     </div>

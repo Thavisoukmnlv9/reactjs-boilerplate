@@ -110,8 +110,17 @@ delete with a confirm dialog, RBAC-gated row actions, and an MSW-backed integrat
 
 ## i18n, styling, theming
 
-- Translations are namespaced (`common`, `auth`, `users`, `dashboard`); missing keys fall back to
-  English. Reference across namespaces with `t('users:title')`.
+- **5 languages** (en is the default, plus lo/th/vi/zh). Language definitions live in
+  `config/languages.ts` (single source of truth). The active language is carried in the URL as
+  `?lang=` (retained across navigation via `retainSearchParams`) and cached to localStorage; the
+  precedence is URL > server prefs > localStorage > navigator > `en`.
+- **One namespace per feature.** `common` lives in `lib/i18n/locales`; each feature owns its strings
+  under `features/<f>/i18n/` (five locale files + an `index.ts` bundle descriptor). `lib/i18n` stays
+  generic (a factory); the app layer composes every bundle in `app/i18n`. Add a feature via
+  `npm run gen:feature`, then register its bundle in `app/i18n/index.ts` + `app/i18n/i18next.d.ts`.
+- `t()` keys, namespaces, and `{{interpolation}}` are type-checked against the English source
+  (`app/i18n/i18next.d.ts`). Reference across namespaces with `t('common:actions.cancel')`. Missing
+  keys fall back to English; `npm run check:i18n` guards key/placeholder parity across all languages.
 - Tailwind v4 with CSS-variable design tokens (`styles/globals.css`); light/dark via `.dark` class
   driven by `next-themes`, with an inline no-flash script in `index.html`.
 

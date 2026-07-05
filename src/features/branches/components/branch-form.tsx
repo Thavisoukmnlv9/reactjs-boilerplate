@@ -1,11 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Building2, Globe, Phone, Receipt } from 'lucide-react'
+import { useMemo } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { useCreateBranch, useUpdateBranch } from '@/features/branches/api/mutations'
 import { BRANCH_CURRENCIES, BRANCH_VERTICALS, type BranchView, type BranchWriteInput } from '@/features/branches/api/types'
-import { type BranchFormValues, branchFormSchema } from '@/features/branches/schema'
+import { type BranchFormValues, makeBranchSchema } from '@/features/branches/schema'
 import { FormProvider } from '@/shared/components/form/core/FormRoot'
 import { FormInput } from '@/shared/components/form/fields/FormInput'
 import { FormPercentBps } from '@/shared/components/form/fields/FormPercentBps'
@@ -41,12 +43,14 @@ function defaultsFor(initial?: BranchView): BranchFormValues {
 }
 
 export function BranchForm({ mode, initial, onDone }: Props) {
+  const { t } = useTranslation(['branches', 'common'])
   const create = useCreateBranch()
   const update = useUpdateBranch()
   const isPending = create.isPending || update.isPending
 
+  const schema = useMemo(() => makeBranchSchema(t), [t])
   const methods = useForm<BranchFormValues>({
-    resolver: zodResolver(branchFormSchema),
+    resolver: zodResolver(schema),
     defaultValues: defaultsFor(initial),
     mode: 'onBlur',
   })
@@ -71,10 +75,10 @@ export function BranchForm({ mode, initial, onDone }: Props) {
     try {
       if (mode === 'create') {
         await create.mutateAsync(payload)
-        toast.success('Branch created')
+        toast.success(t('toasts.created'))
       } else if (initial) {
         await update.mutateAsync({ id: initial.id, data: payload })
-        toast.success('Branch updated')
+        toast.success(t('toasts.updated'))
       }
       onDone()
     } catch (e) {
@@ -88,49 +92,49 @@ export function BranchForm({ mode, initial, onDone }: Props) {
   return (
     <FormProvider methods={methods} onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4">
-        <FormSectionCard eyebrow="Identity" title="Branch details" icon={<Building2 />} accent="brand">
+        <FormSectionCard eyebrow={t('form.identityEyebrow')} title={t('form.identityTitle')} icon={<Building2 />} accent="brand">
           <div className="grid gap-4 sm:grid-cols-2">
-            <FormInput name="name" label="Name" requiredMark placeholder="Downtown" />
-            <FormInput name="code" label="Code" placeholder="DT-01" className="uppercase" />
-            <FormSelect name="vertical" label="Vertical" options={verticalOptions} clearable clearLabel="Unset" placeholder="Select…" />
-            <FormInput name="type" label="Type" placeholder="Optional" />
+            <FormInput name="name" label={t('form.name')} requiredMark placeholder={t('form.namePlaceholder')} />
+            <FormInput name="code" label={t('form.code')} placeholder={t('form.codePlaceholder')} className="uppercase" />
+            <FormSelect name="vertical" label={t('form.vertical')} options={verticalOptions} clearable clearLabel={t('form.verticalUnset')} placeholder={t('form.verticalPlaceholder')} />
+            <FormInput name="type" label={t('form.type')} placeholder={t('form.typePlaceholder')} />
           </div>
         </FormSectionCard>
 
-        <FormSectionCard eyebrow="Contact" title="How to reach it" icon={<Phone />} accent="sky">
+        <FormSectionCard eyebrow={t('form.contactEyebrow')} title={t('form.contactTitle')} icon={<Phone />} accent="sky">
           <div className="grid gap-4 sm:grid-cols-2">
-            <FormInput name="phone" label="Phone" />
-            <FormInput name="email" label="Email" type="email" />
+            <FormInput name="phone" label={t('form.phone')} />
+            <FormInput name="email" label={t('form.email')} type="email" />
           </div>
-          <FormTextarea name="address" label="Address" rows={2} />
+          <FormTextarea name="address" label={t('form.address')} rows={2} />
         </FormSectionCard>
 
         <FormSectionCard
-          eyebrow="Commerce"
-          title="Localization & pricing"
-          description="Currency, timezone and the tax/fee rates applied at this branch."
+          eyebrow={t('form.commerceEyebrow')}
+          title={t('form.commerceTitle')}
+          description={t('form.commerceDescription')}
           icon={<Receipt />}
           accent="emerald"
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <FormInput name="timezone" label="Timezone" requiredMark icon={<Globe />} placeholder="UTC" />
-            <FormSelect name="currency_code" label="Currency" requiredMark options={currencyOptions} />
-            <FormPercentBps name="tax_rate_bps" label="Tax rate" hint="0–50%" maxPercent={50} />
-            <FormPercentBps name="service_fee_bps" label="Service fee" hint="0–50%" maxPercent={50} />
+            <FormInput name="timezone" label={t('form.timezone')} requiredMark icon={<Globe />} placeholder={t('form.timezonePlaceholder')} />
+            <FormSelect name="currency_code" label={t('form.currency')} requiredMark options={currencyOptions} />
+            <FormPercentBps name="tax_rate_bps" label={t('form.taxRate')} hint={t('form.taxRateHint')} maxPercent={50} />
+            <FormPercentBps name="service_fee_bps" label={t('form.serviceFee')} hint={t('form.serviceFeeHint')} maxPercent={50} />
           </div>
-          <FormSwitch name="prices_include_tax" label="Prices include tax" hint="Displayed prices already contain tax." />
+          <FormSwitch name="prices_include_tax" label={t('form.pricesIncludeTax')} hint={t('form.pricesIncludeTaxHint')} />
           {mode === 'edit' ? (
-            <FormSwitch name="is_active" label="Active" hint="Archived branches are hidden from day-to-day operations." />
+            <FormSwitch name="is_active" label={t('form.active')} hint={t('form.activeHint')} />
           ) : null}
         </FormSectionCard>
       </div>
 
       <div className="flex items-center justify-end gap-2 border-t bg-background/95 p-4 supports-[backdrop-filter]:bg-background/80 supports-[backdrop-filter]:backdrop-blur">
         <Button type="button" variant="outline" onClick={onDone} disabled={isPending}>
-          Cancel
+          {t('common:actions.cancel')}
         </Button>
         <Button type="submit" disabled={isPending}>
-          {isPending ? 'Saving…' : mode === 'create' ? 'Create branch' : 'Save changes'}
+          {isPending ? t('common:states.loading') : mode === 'create' ? t('form.submitCreate') : t('form.submitEdit')}
         </Button>
       </div>
     </FormProvider>

@@ -1,4 +1,5 @@
 import { env } from './env'
+import { DEFAULT_LOCALE, LANGUAGE_CODES } from './languages'
 
 /**
  * Static, non-secret app configuration derived from validated `env`.
@@ -7,8 +8,8 @@ import { env } from './env'
 export const appConfig = {
   name: env.appName,
   description: 'Production-grade modular React + TypeScript boilerplate',
-  defaultLocale: 'en',
-  supportedLocales: ['en', 'es'] as const,
+  defaultLocale: DEFAULT_LOCALE,
+  supportedLocales: LANGUAGE_CODES,
   api: {
     baseUrl: env.apiBaseUrl,
     timeout: 30_000,
@@ -28,4 +29,4 @@ export const appConfig = {
   },
 } as const
 
-export type SupportedLocale = (typeof appConfig.supportedLocales)[number]
+export type { SupportedLocale } from './languages'

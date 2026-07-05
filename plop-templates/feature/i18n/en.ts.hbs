@@ -1,0 +1,9 @@
+/**
+ * `{{kebabCase name}}` namespace — source of truth. Mirror this exact key tree in the
+ * sibling `lo`/`th`/`vi`/`zh` files (enforced at compile time by `TranslationShape`).
+ */
+export const en = {
+  title: '{{titleCase name}}',
+} as const
+
+export type {{pascalCase name}}Bundle = typeof en

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { LanguageSwitcher } from '@/components/common/language-switcher'
+import { LanguageSwitcher } from '@/shared/components/layout/language-switcher'
 import { ThemeToggle } from '@/components/common/theme-toggle'
 
 /** Public/guest + onboarding shell. Children are the routed page (an <Outlet/>). */

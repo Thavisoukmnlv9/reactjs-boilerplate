@@ -1,5 +1,6 @@
 import { Briefcase, Crown, Loader2, ScanLine, ShieldCheck, User } from 'lucide-react'
 import type { ComponentType } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { cn } from '@/core/utils/cn'
 
@@ -11,19 +12,20 @@ import { cn } from '@/core/utils/cn'
  */
 const DEMO_PASSWORD = 'Password123'
 
+type PersonaId = 'owner' | 'admin' | 'manager' | 'member' | 'cashier'
+
 interface DemoPersona {
+  id: PersonaId
   email: string
-  role: string
-  hint: string
   Icon: ComponentType<{ className?: string }>
 }
 
 const DEMO_PERSONAS: DemoPersona[] = [
-  { email: 'owner@demo.test', role: 'Owner', hint: 'Full access · billing & org', Icon: Crown },
-  { email: 'admin@demo.test', role: 'Admin', hint: 'Members, roles & settings', Icon: ShieldCheck },
-  { email: 'manager@demo.test', role: 'Manager', hint: 'Operate a branch & its staff', Icon: Briefcase },
-  { email: 'member@demo.test', role: 'Member', hint: 'Standard staff access', Icon: User },
-  { email: 'cashier@demo.test', role: 'Cashier', hint: 'Point-of-sale only', Icon: ScanLine },
+  { id: 'owner', email: 'owner@demo.test', Icon: Crown },
+  { id: 'admin', email: 'admin@demo.test', Icon: ShieldCheck },
+  { id: 'manager', email: 'manager@demo.test', Icon: Briefcase },
+  { id: 'member', email: 'member@demo.test', Icon: User },
+  { id: 'cashier', email: 'cashier@demo.test', Icon: ScanLine },
 ]
 
 interface Props {
@@ -33,26 +35,28 @@ interface Props {
 }
 
 export function DevQuickLogin({ onPick, pendingEmail, disabled }: Props) {
+  const { t } = useTranslation('auth')
   return (
     <div className="mt-6">
       <div className="mb-3 flex items-center gap-3">
         <span className="h-px flex-1 bg-border" />
         <span className="text-[0.7rem] font-medium uppercase tracking-wider text-muted-foreground">
-          Dev quick sign-in
+          {t('devQuickLogin.heading')}
         </span>
         <span className="h-px flex-1 bg-border" />
       </div>
 
       <div className="space-y-2">
-        {DEMO_PERSONAS.map(({ email, role, hint, Icon }) => {
+        {DEMO_PERSONAS.map(({ id, email, Icon }) => {
           const isPending = pendingEmail === email
+          const role = t(`devQuickLogin.roles.${id}`)
           return (
             <button
               key={email}
               type="button"
               disabled={disabled}
               onClick={() => onPick(email, DEMO_PASSWORD)}
-              aria-label={`Use ${role} demo account (${email})`}
+              aria-label={t('devQuickLogin.useAccount', { role, email })}
               className={cn(
                 'group flex w-full items-center gap-3 rounded-lg border bg-background px-3 py-2.5 text-left transition-all',
                 'hover:border-primary/40 hover:bg-accent hover:shadow-xs',
@@ -73,7 +77,9 @@ export function DevQuickLogin({ onPick, pendingEmail, disabled }: Props) {
                     <span className="shrink-0 font-mono text-[0.7rem] text-muted-foreground">{email}</span>
                   )}
                 </span>
-                <span className="block truncate text-xs text-muted-foreground">{hint}</span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {t(`devQuickLogin.hints.${id}`)}
+                </span>
               </span>
             </button>
           )
@@ -81,7 +87,7 @@ export function DevQuickLogin({ onPick, pendingEmail, disabled }: Props) {
       </div>
 
       <p className="mt-3 text-center text-[0.7rem] text-muted-foreground">
-        Seeded accounts · password <span className="font-mono">{DEMO_PASSWORD}</span> · development only
+        {t('devQuickLogin.footer', { password: DEMO_PASSWORD })}
       </p>
     </div>
   )

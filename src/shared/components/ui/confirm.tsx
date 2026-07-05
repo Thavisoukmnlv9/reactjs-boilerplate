@@ -1,5 +1,6 @@
 'use client'
 
+import i18next from 'i18next'
 import { XIcon } from 'lucide-react'
 import type * as React from 'react'
 import { toast } from 'sonner'
@@ -24,11 +25,13 @@ type ConfirmOptions = {
  * Opens a Sonner toast with inline confirm/cancel actions and resolves a promise with the result.
  */
 export function confirm(options: ConfirmOptions = {}): Promise<boolean> {
+  // Defaults are resolved inside the function body (not at module scope) so they
+  // reflect the current language on every call.
   const {
-    title = 'Are you sure?',
+    title = i18next.t('common:confirm.title'),
     description,
-    confirmText = 'Confirm',
-    cancelText = 'Cancel',
+    confirmText = i18next.t('common:confirm.confirm'),
+    cancelText = i18next.t('common:confirm.cancel'),
     confirmVariant = 'default',
     autoCloseMs = 0,
   } = options
@@ -75,7 +78,7 @@ export function confirm(options: ConfirmOptions = {}): Promise<boolean> {
                 variant="ghost"
                 size="icon"
                 onClick={onCancel}
-                aria-label="Dismiss"
+                aria-label={i18next.t('common:confirm.dismiss')}
               >
                 <XIcon className="size-4" />
               </Button>

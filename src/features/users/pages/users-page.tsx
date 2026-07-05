@@ -1,6 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { Pencil, Send, Trash2, UserPlus, Users as UsersIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { PageHeader } from '@/components/common/page-header'
@@ -51,13 +52,10 @@ interface UsersSearch extends TableSearchState {
   role_id?: string
 }
 
-const HIDEABLE: { id: string; label: string }[] = [
-  { id: 'role', label: 'Role' },
-  { id: 'branches', label: 'Branches' },
-  { id: 'status', label: 'Status' },
-]
+const HIDEABLE_IDS = ['role', 'branches', 'status'] as const
 
 export function UsersPage() {
+  const { t } = useTranslation(['users', 'common'])
   const { search, pageIndex, pageSize, setPagination, setSort, setQuery, setFilter, openCreate, openEdit, closeSheet } =
     useTableUrlState<UsersSearch>()
 
@@ -95,15 +93,15 @@ export function UsersPage() {
 
   async function handleRemove(id: string, name: string | null) {
     const ok = await confirm({
-      title: `Remove ${name ?? 'this member'}?`,
-      description: 'They lose access to the organization immediately. This cannot be undone.',
-      confirmText: 'Remove',
+      title: name ? t('confirm.removeTitle', { name }) : t('confirm.removeTitleFallback'),
+      description: t('confirm.removeDescription'),
+      confirmText: t('confirm.removeConfirm'),
       confirmVariant: 'destructive',
     })
     if (!ok) return
     try {
       await remove.mutateAsync(id)
-      toast.success('Member removed')
+      toast.success(t('toasts.memberRemoved'))
     } catch (e) {
       toast.error((e as Error).message)
     }
@@ -114,7 +112,7 @@ export function UsersPage() {
       const res = await resend.mutateAsync(id)
       const url = `${window.location.origin}/accept-invite?token=${res.invite_token}`
       await navigator.clipboard.writeText(url)
-      toast.success('New invite link copied to clipboard')
+      toast.success(t('toasts.inviteLinkCopied'))
     } catch (e) {
       toast.error((e as Error).message)
     }
@@ -123,9 +121,9 @@ export function UsersPage() {
   async function runBulk(action: 'remove' | 'resend_invite', verb: string, confirmFirst = false) {
     if (confirmFirst) {
       const ok = await confirm({
-        title: `Remove ${selection.selectedCount} member${selection.selectedCount === 1 ? '' : 's'}?`,
-        description: 'Owners and your own account are skipped. This cannot be undone.',
-        confirmText: 'Remove',
+        title: t('confirm.removeMany', { count: selection.selectedCount }),
+        description: t('confirm.removeManyDescription'),
+        confirmText: t('confirm.removeConfirm'),
         confirmVariant: 'destructive',
       })
       if (!ok) return
@@ -162,7 +160,7 @@ export function UsersPage() {
       {
         id: 'name',
         accessorKey: 'name',
-        header: 'Member',
+        header: t('columns.member'),
         enableSorting: true,
         cell: ({ row }) => {
           const m = row.original
@@ -170,7 +168,7 @@ export function UsersPage() {
             <IdentityCell
               avatarText={m.user.name ?? m.user.email ?? '?'}
               avatarUrl={m.user.avatar_url}
-              primary={m.user.name ?? m.user.email ?? 'Unknown'}
+              primary={m.user.name ?? m.user.email ?? t('empty.unknownMember')}
               secondary={m.user.email}
             />
           )
@@ -178,14 +176,14 @@ export function UsersPage() {
       },
       {
         id: 'role',
-        header: 'Role',
+        header: t('columns.role'),
         enableSorting: false,
         cell: ({ row }) => (
           <span className="flex items-center gap-1.5 text-sm">
             {roleName(row.original.role_id)}
             {row.original.is_owner ? (
               <Badge variant="secondary" className="text-[10px]">
-                Owner
+                {t('badges.owner')}
               </Badge>
             ) : null}
           </span>
@@ -193,14 +191,14 @@ export function UsersPage() {
       },
       {
         id: 'branches',
-        header: 'Branches',
+        header: t('columns.branches'),
         enableSorting: false,
         cell: ({ row }) => <span className="tabular-nums text-muted-foreground text-sm">{row.original.branch_ids.length}</span>,
       },
       {
         id: 'status',
         accessorKey: 'status',
-        header: 'Status',
+        header: t('columns.status'),
         enableSorting: true,
         cell: ({ row }) => <StatusChip status={row.original.status} />,
       },
@@ -212,12 +210,12 @@ export function UsersPage() {
         cell: ({ row }) => {
           const m = row.original
           const actions: RowAction[] = []
-          if (canManage) actions.push({ label: 'Edit', icon: Pencil, onClick: () => openEdit(m.id) })
+          if (canManage) actions.push({ label: t('common:actions.edit'), icon: Pencil, onClick: () => openEdit(m.id) })
           if (canInvite && m.status === 'PENDING')
-            actions.push({ label: 'Resend', icon: Send, onClick: () => void handleResend(m.id) })
+            actions.push({ label: t('actions.resend'), icon: Send, onClick: () => void handleResend(m.id) })
           if (canManage && !m.is_owner)
             actions.push({
-              label: 'Remove',
+              label: t('confirm.removeConfirm'),
               icon: Trash2,
               variant: 'destructive',
               onClick: () => void handleRemove(m.id, m.user.name),
@@ -229,18 +227,20 @@ export function UsersPage() {
     const visible = base.filter((c) => !hidden.has(c.id as string))
     return canBulk ? [createSelectColumn(selection, 'member'), ...visible] : visible
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hidden, canManage, canBulk, canInvite, roles, selection])
+  }, [hidden, canManage, canBulk, canInvite, roles, selection, t])
 
   const statItems = [
-    { id: 'total', label: 'Total members', value: statsQuery.data?.total ?? 0, icon: <UsersIcon /> },
-    { id: 'active', label: 'Active', value: statsQuery.data?.active ?? 0, tone: 'success' as const },
-    { id: 'pending', label: 'Pending invites', value: statsQuery.data?.pending ?? 0, tone: 'warning' as const },
-    { id: 'suspended', label: 'Suspended', value: statsQuery.data?.suspended ?? 0, tone: 'danger' as const },
+    { id: 'total', label: t('stats.total'), value: statsQuery.data?.total ?? 0, icon: <UsersIcon /> },
+    { id: 'active', label: t('stats.active'), value: statsQuery.data?.active ?? 0, tone: 'success' as const },
+    { id: 'pending', label: t('stats.pending'), value: statsQuery.data?.pending ?? 0, tone: 'warning' as const },
+    { id: 'suspended', label: t('stats.suspended'), value: statsQuery.data?.suspended ?? 0, tone: 'danger' as const },
   ]
 
   const chips = []
-  if (search.status) chips.push({ id: 'status', label: `Status: ${search.status}`, onRemove: () => setFilter('status', undefined) })
-  if (search.role_id) chips.push({ id: 'role', label: `Role: ${roleName(search.role_id)}`, onRemove: () => setFilter('role_id', undefined) })
+  if (search.status)
+    chips.push({ id: 'status', label: t('filters.statusChip', { value: search.status }), onRemove: () => setFilter('status', undefined) })
+  if (search.role_id)
+    chips.push({ id: 'role', label: t('filters.roleChip', { value: roleName(search.role_id) }), onRemove: () => setFilter('role_id', undefined) })
 
   const hasFilters = Boolean(search.q || search.status || search.role_id)
   const unfilteredEmpty = !usersQuery.isLoading && !usersQuery.isError && total === 0 && !hasFilters
@@ -248,12 +248,12 @@ export function UsersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Users"
-        description="Members of your organization, their roles and branch access."
+        title={t('title')}
+        description={t('subtitle')}
         actions={
           canInvite ? (
             <Button size="sm" onClick={openCreate}>
-              <UserPlus className="size-4" /> Invite member
+              <UserPlus className="size-4" /> {t('actions.invite')}
             </Button>
           ) : undefined
         }
@@ -264,12 +264,12 @@ export function UsersPage() {
       {unfilteredEmpty ? (
         <EmptyState
           icon={<UsersIcon className="size-7" />}
-          title="No members yet"
-          description="Invite your teammates to give them access to this organization."
+          title={t('empty.title')}
+          description={t('empty.description')}
           action={
             canInvite ? (
               <Button onClick={openCreate}>
-                <UserPlus className="size-4" /> Invite member
+                <UserPlus className="size-4" /> {t('actions.invite')}
               </Button>
             ) : undefined
           }
@@ -281,13 +281,13 @@ export function UsersPage() {
           <TableToolbar
             left={
               <>
-                <TableSearch value={search.q ?? ''} onChange={setQuery} placeholder="Search name or email…" />
+                <TableSearch value={search.q ?? ''} onChange={setQuery} placeholder={t('filters.searchPlaceholder')} />
                 <Select value={search.status ?? ALL} onValueChange={(v) => setFilter('status', v === ALL ? undefined : v)}>
                   <SelectTrigger className="h-9 w-[150px]">
-                    <SelectValue placeholder="Status" />
+                    <SelectValue placeholder={t('filters.statusPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={ALL}>All statuses</SelectItem>
+                    <SelectItem value={ALL}>{t('filters.allStatuses')}</SelectItem>
                     {MEMBER_STATUSES.map((s) => (
                       <SelectItem key={s} value={s} className="capitalize">
                         {s.toLowerCase()}
@@ -297,10 +297,10 @@ export function UsersPage() {
                 </Select>
                 <Select value={search.role_id ?? ALL} onValueChange={(v) => setFilter('role_id', v === ALL ? undefined : v)}>
                   <SelectTrigger className="h-9 w-[150px]">
-                    <SelectValue placeholder="Role" />
+                    <SelectValue placeholder={t('filters.rolePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={ALL}>All roles</SelectItem>
+                    <SelectItem value={ALL}>{t('filters.allRoles')}</SelectItem>
                     {roles.map((r) => (
                       <SelectItem key={r.id} value={r.id}>
                         {r.name}
@@ -314,7 +314,7 @@ export function UsersPage() {
             right={
               <>
                 <TableColumnVisibility
-                  columns={HIDEABLE.map((c) => ({ id: c.id, label: c.label, visible: !hidden.has(c.id), hideable: true }))}
+                  columns={HIDEABLE_IDS.map((id) => ({ id, label: t(`columns.${id}`), visible: !hidden.has(id), hideable: true }))}
                   onChange={(id, visible) =>
                     setHidden((prev) => {
                       const next = new Set(prev)
@@ -347,7 +347,7 @@ export function UsersPage() {
             enableRowSelection={false}
             enableFiltering={false}
             keyExtractor={(u) => u.id}
-            emptyMessage="No members match your filters."
+            emptyMessage={t('empty.filtered')}
           />
         </div>
       )}
@@ -358,12 +358,12 @@ export function UsersPage() {
           totalCount={total}
           onClearSelection={selection.clear}
           actions={[
-            { label: 'Resend invites', icon: Send, onClick: () => void runBulk('resend_invite', 'invites refreshed') },
+            { label: t('actions.resendInvites'), icon: Send, onClick: () => void runBulk('resend_invite', t('toasts.invitesRefreshed')) },
             {
-              label: 'Remove',
+              label: t('confirm.removeConfirm'),
               icon: Trash2,
               variant: 'destructive',
-              onClick: () => void runBulk('remove', 'removed', true),
+              onClick: () => void runBulk('remove', t('toasts.removed'), true),
             },
           ]}
         />
@@ -372,11 +372,9 @@ export function UsersPage() {
       <Sheet open={search.sheet === 'create' || editing} onOpenChange={(o) => (o ? null : closeSheet())}>
         <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-xl">
           <SheetHeader className="border-b">
-            <SheetTitle>{search.sheet === 'create' ? 'Invite member' : 'Edit member'}</SheetTitle>
+            <SheetTitle>{search.sheet === 'create' ? t('sheet.inviteTitle') : t('sheet.editTitle')}</SheetTitle>
             <SheetDescription>
-              {search.sheet === 'create'
-                ? 'Send an invite link — the member sets their own password.'
-                : 'Update their role, branch access and staff details.'}
+              {search.sheet === 'create' ? t('sheet.inviteDescription') : t('sheet.editDescription')}
             </SheetDescription>
           </SheetHeader>
           {search.sheet === 'create' ? (

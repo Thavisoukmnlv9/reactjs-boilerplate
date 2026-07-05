@@ -1,5 +1,6 @@
 import { Braces, ListTree, Plus, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import type { ConditionField } from '@/features/policies/api/types'
 import { Button } from '@/shared/components/ui/button'
@@ -71,6 +72,7 @@ interface Props {
 }
 
 export function PolicyConditionBuilder({ value, onChange, fields, operators }: Props) {
+  const { t } = useTranslation('policies')
   const [rows, setRows] = useState<Row[]>(() => conditionsToRows(value))
   const [raw, setRaw] = useState(false)
   const [rawText, setRawText] = useState(() => (value ? JSON.stringify(value, null, 2) : ''))
@@ -103,7 +105,7 @@ export function PolicyConditionBuilder({ value, onChange, fields, operators }: P
     }
     try {
       const parsed = JSON.parse(text)
-      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) throw new Error('Must be a JSON object')
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) throw new Error(t('condition.rawInvalidObject'))
       setRawError(null)
       onChange(parsed)
       setRows(conditionsToRows(parsed))
@@ -116,7 +118,7 @@ export function PolicyConditionBuilder({ value, onChange, fields, operators }: P
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-muted-foreground text-xs">
-          Rows are combined with AND. Empty means the policy always applies.
+          {t('condition.hint')}
         </p>
         <Button
           type="button"
@@ -126,7 +128,7 @@ export function PolicyConditionBuilder({ value, onChange, fields, operators }: P
           onClick={() => (raw ? setRaw(false) : enterRaw())}
         >
           {raw ? <ListTree className="size-3.5" /> : <Braces className="size-3.5" />}
-          {raw ? 'Guided' : 'Raw JSON'}
+          {raw ? t('condition.guided') : t('condition.rawJson')}
         </Button>
       </div>
 
@@ -136,7 +138,7 @@ export function PolicyConditionBuilder({ value, onChange, fields, operators }: P
             rows={5}
             value={rawText}
             onChange={(e) => applyRaw(e.target.value)}
-            placeholder={'{ "resource.is_main": true }'}
+            placeholder={t('condition.rawPlaceholder')}
             className="font-mono text-xs"
             aria-invalid={Boolean(rawError)}
           />
@@ -146,7 +148,7 @@ export function PolicyConditionBuilder({ value, onChange, fields, operators }: P
         <div className="space-y-2">
           {rows.length === 0 ? (
             <p className="rounded-lg border border-dashed px-3 py-4 text-center text-muted-foreground text-sm">
-              No conditions — this policy is unconditional.
+              {t('condition.none')}
             </p>
           ) : (
             rows.map((row) => {
@@ -157,7 +159,7 @@ export function PolicyConditionBuilder({ value, onChange, fields, operators }: P
                 <div key={row.id} className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/20 p-2">
                   <Select value={row.path} onValueChange={(v) => updateRow(row.id, { path: v })}>
                     <SelectTrigger className="h-8 w-[190px] text-xs">
-                      <SelectValue placeholder="Attribute" />
+                      <SelectValue placeholder={t('condition.attribute')} />
                     </SelectTrigger>
                     <SelectContent>
                       {pathOptions.map((f) => (
@@ -180,7 +182,7 @@ export function PolicyConditionBuilder({ value, onChange, fields, operators }: P
                     </SelectContent>
                   </Select>
                   <ConditionValueInput field={field} value={row.value} onChange={(v) => updateRow(row.id, { value: v })} />
-                  <Button type="button" variant="ghost" size="icon" className="size-8 shrink-0" aria-label="Remove condition" onClick={() => removeRow(row.id)}>
+                  <Button type="button" variant="ghost" size="icon" className="size-8 shrink-0" aria-label={t('condition.removeCondition')} onClick={() => removeRow(row.id)}>
                     <X className="size-4" />
                   </Button>
                 </div>
@@ -189,10 +191,10 @@ export function PolicyConditionBuilder({ value, onChange, fields, operators }: P
           )}
           {fields.length > 0 ? (
             <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addRow}>
-              <Plus className="size-3.5" /> Add condition
+              <Plus className="size-3.5" /> {t('condition.addCondition')}
             </Button>
           ) : (
-            <p className="text-muted-foreground text-xs">No attributes available for this subject.</p>
+            <p className="text-muted-foreground text-xs">{t('condition.noAttributes')}</p>
           )}
         </div>
       )}
@@ -209,6 +211,7 @@ function ConditionValueInput({
   value: string
   onChange: (v: string) => void
 }) {
+  const { t } = useTranslation('policies')
   if (field?.type === 'boolean') {
     return (
       <Select value={value || 'true'} onValueChange={onChange}>
@@ -226,7 +229,7 @@ function ConditionValueInput({
     return (
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger className="h-8 w-[150px] text-xs">
-          <SelectValue placeholder="Value" />
+          <SelectValue placeholder={t('condition.value')} />
         </SelectTrigger>
         <SelectContent>
           {field.options.map((o) => (
@@ -243,7 +246,7 @@ function ConditionValueInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       type={field?.type === 'number' ? 'number' : 'text'}
-      placeholder="Value"
+      placeholder={t('condition.value')}
       className="h-8 w-[150px] text-xs"
     />
   )
