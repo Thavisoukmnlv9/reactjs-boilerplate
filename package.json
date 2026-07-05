@@ -5,6 +5,14 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Production-grade, modular, feature-based React + TypeScript boilerplate.",
+  "author": "Thavisouk MNLV <thavisoukmnlv@gmail.com> (https://github.com/Thavisoukmnlv9)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Thavisoukmnlv9/reactjs-boilerplate.git"
+  },
+  "homepage": "https://github.com/Thavisoukmnlv9/reactjs-boilerplate#readme",
+  "bugs": "https://github.com/Thavisoukmnlv9/reactjs-boilerplate/issues",
   "engines": {
     "node": ">=22"
   },
