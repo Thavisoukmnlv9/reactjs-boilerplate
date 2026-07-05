@@ -10,7 +10,7 @@
  *
  *   const methods = useForm<FormValues>({ defaultValues, resolver })
  *   const draft = useFormDraft(methods, {
- *     storageKey: 'business-sync:shop-supplier-create',
+ *     storageKey: 'boilerplate:shop-supplier-create',
  *     debounceMs: 600,
  *     stepCount: STEPS.length,
  *     enabled: mode === 'create',

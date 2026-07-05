@@ -4,7 +4,7 @@ export interface User {
   name: string | null
   avatar_url: string | null
   status: string
-  /** True for Business Sync platform operators (not org-scoped). Gates the
+  /** True for Boilerplate platform operators (not org-scoped). Gates the
    *  subscription/plan operations console. Defaults to false for tenant users. */
   is_platform_staff?: boolean
   platform_staff_role?: string | null

@@ -109,7 +109,7 @@ describe('useFormWizard', () => {
 })
 
 describe('useFormWizard draft persistence', () => {
-  const KEY = 'business-sync:test-wizard-draft'
+  const KEY = 'boilerplate:test-wizard-draft'
 
   beforeEach(() => {
     localStorage.clear()

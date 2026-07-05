@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { mergeDraft, useFormDraft } from '../use-form-draft'
 
-const STORAGE_KEY = 'business-sync:test-form-draft'
+const STORAGE_KEY = 'boilerplate:test-form-draft'
 
 function makeMockMethods(initialValues: Record<string, unknown>) {
   return {

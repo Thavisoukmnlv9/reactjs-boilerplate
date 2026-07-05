@@ -1,7 +1,7 @@
 import { cn } from '@/core/utils/cn'
 
 /**
- * Business Sync — "The Hub Mark".
+ * Boilerplate — "The Hub Mark".
  *
  * One orange core linked to three satellites: every channel synced to a single
  * source of truth. Renders the full-color rounded tile lockup. Size it via
@@ -14,7 +14,7 @@ export function BrandMark({ className }: { className?: string }) {
       className={cn('size-6 shrink-0', className)}
       fill="none"
       role="img"
-      aria-label="Business Sync"
+      aria-label="Boilerplate"
       xmlns="http://www.w3.org/2000/svg"
     >
       <rect width="512" height="512" rx="119.5" fill="#F54A00" />

@@ -47,7 +47,7 @@
   --radius-xl: calc(var(--radius) + 4px);
   --color-auth-canvas: var(--auth-canvas);
 
-  /* BusinessSync CI — brand ramp + elevation as Tailwind utilities */
+  /* Boilerplate CI — brand ramp + elevation as Tailwind utilities */
   --color-brand: var(--brand);
   --color-brand-deep: var(--brand-deep);
   --color-brand-bright: var(--brand-bright);
@@ -66,7 +66,7 @@
 
 :root {
   /* ========================================================================
-     BusinessSync — Corporate Identity (source of truth)
+     Boilerplate — Corporate Identity (source of truth)
      Ref: brand/05 _ Brand CI Guideline.html
      50% White · 30% Orange · 20% Black. Every grey is black at low opacity.
      ======================================================================== */

@@ -15,7 +15,7 @@ export default tseslint.config(
       'test-results',
       'node_modules',
       'plop-templates',
-      // Vendored from business-sync-admin-portal — typechecked, not linted.
+      // Vendored from boilerplate-admin-portal — typechecked, not linted.
       'src/shared',
       'src/core',
       'src/app/config/sidebar-config.ts',

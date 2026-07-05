@@ -450,12 +450,12 @@ export function AppSidebar() {
               size={collapsed ? 'default' : 'lg'}
               asChild
               isActive={dashboardActive}
-              tooltip={collapsed ? 'Business Sync · Dashboard' : undefined}
+              tooltip={collapsed ? 'Boilerplate · Dashboard' : undefined}
             >
               <Link to={ROUTES.DASHBOARD}>
                 <BrandMark className="size-5" />
                 {!collapsed && (
-                  <span className="truncate font-semibold">Business Sync</span>
+                  <span className="truncate font-semibold">Boilerplate</span>
                 )}
               </Link>
             </SidebarMenuButton>
