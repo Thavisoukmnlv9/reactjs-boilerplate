@@ -1,14 +1,38 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 
 import { apiClient } from '@/core/api/api-client'
 import { endpoints } from '@/core/api/endpoints'
+import { toQueryString } from '@/shared/table/table-url-state'
 
-import { policyKeys, type Paginated, type PolicyView } from './types'
+import {
+  type Paginated,
+  type PoliciesListParams,
+  type PolicyConditionSchema,
+  policyKeys,
+  type PolicyStats,
+  type PolicyView,
+} from './types'
 
-export function usePoliciesQuery() {
+export function usePoliciesQuery(params: PoliciesListParams = {}) {
   return useQuery({
-    queryKey: policyKeys.all,
-    queryFn: () => apiClient.get<Paginated<PolicyView>>(`${endpoints.policies.list}?limit=100`),
+    queryKey: policyKeys.list(params),
+    queryFn: () => apiClient.get<Paginated<PolicyView>>(`${endpoints.policies.list}${toQueryString({ ...params })}`),
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function usePolicyStatsQuery() {
+  return useQuery({
+    queryKey: policyKeys.stats,
+    queryFn: () => apiClient.get<PolicyStats>(endpoints.policies.stats),
+  })
+}
+
+export function usePolicyConditionSchemaQuery() {
+  return useQuery({
+    queryKey: policyKeys.conditionSchema,
+    queryFn: () => apiClient.get<PolicyConditionSchema>(endpoints.policies.conditionSchema),
+    staleTime: 10 * 60_000,
   })
 }
 

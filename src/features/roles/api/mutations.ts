@@ -3,8 +3,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/core/api/api-client'
 import { endpoints } from '@/core/api/endpoints'
 import { queryKeys } from '@/core/api/query-keys'
+import type { BulkResult } from '@/shared/api/bulk'
 
-import type { RoleView, RoleWriteInput } from './types'
+import type { BulkRolesInput, RoleView, RoleWriteInput } from './types'
 
 /** Role changes can alter the editor's own effective permissions → also refetch /me. */
 function useInvalidateRoles() {
@@ -40,6 +41,14 @@ export function useDeleteRole() {
   const invalidate = useInvalidateRoles()
   return useMutation({
     mutationFn: (id: string) => apiClient.delete<void>(endpoints.roles.delete(id)),
+    onSuccess: invalidate,
+  })
+}
+
+export function useBulkRoles() {
+  const invalidate = useInvalidateRoles()
+  return useMutation({
+    mutationFn: (input: BulkRolesInput) => apiClient.post<BulkResult>(endpoints.roles.bulk, input),
     onSuccess: invalidate,
   })
 }

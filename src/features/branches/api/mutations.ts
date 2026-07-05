@@ -3,8 +3,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/core/api/api-client'
 import { endpoints } from '@/core/api/endpoints'
 import { queryKeys } from '@/core/api/query-keys'
+import type { BulkResult } from '@/shared/api/bulk'
 
-import { branchKeys, type BranchView, type BranchWriteInput } from './types'
+import { type BulkBranchesInput, branchKeys, type BranchView, type BranchWriteInput } from './types'
 
 function useInvalidateBranches() {
   const qc = useQueryClient()
@@ -47,6 +48,14 @@ export function useMakeMainBranch() {
   const invalidate = useInvalidateBranches()
   return useMutation({
     mutationFn: (id: string) => apiClient.patch<BranchView>(endpoints.branches.update(id), { is_main: true }),
+    onSuccess: invalidate,
+  })
+}
+
+export function useBulkBranches() {
+  const invalidate = useInvalidateBranches()
+  return useMutation({
+    mutationFn: (input: BulkBranchesInput) => apiClient.post<BulkResult>(endpoints.branches.bulk, input),
     onSuccess: invalidate,
   })
 }

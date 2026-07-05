@@ -3,11 +3,11 @@ import { Pencil } from 'lucide-react'
 
 import { PageHeader } from '@/components/common/page-header'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/shared/components/ui/badge'
 import { useCan } from '@/core/access'
 import { PERMISSIONS } from '@/core/constants/permissions'
 import { useRoleQuery } from '@/features/roles/api/queries'
 import { groupByModule, labelForCode, moduleLabel } from '@/features/roles/lib/permission-catalog'
+import { Badge } from '@/shared/components/ui/badge'
 
 export function RoleDetailPage() {
   const { roleId } = useParams({ strict: false }) as { roleId?: string }

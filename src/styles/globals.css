@@ -55,6 +55,13 @@
   --shadow-e2: var(--e2);
   --shadow-e3: var(--e3);
   --shadow-brand: var(--e-brand);
+
+  /* Data-admin type layer: a monospace stack for codes / ids / figures so numeric
+     table columns align (tabular-nums). Latin-only data — the multilingual body
+     stays Noto Sans. Drop a self-hosted display/mono woff2 in here later without
+     touching call-sites. */
+  --font-mono: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
 }
 
 :root {

@@ -1,5 +1,6 @@
 import type { CheckedState } from '@radix-ui/react-checkbox'
 
+import type { PermissionView } from '@/features/roles/api/types'
 import type { ModuleGroup } from '@/features/roles/lib/permission-catalog'
 import { labelForCode } from '@/features/roles/lib/permission-catalog'
 
@@ -19,6 +20,25 @@ export function isDangerCode(
   dangerCodes: readonly string[]
 ): boolean {
   return dangerCodes.includes(code)
+}
+
+/**
+ * Restrict the permission catalog to codes the current user may actually grant.
+ *
+ * The server rejects any code the granting user does not itself hold with a 422
+ * (a privilege-escalation guard: you cannot hand out access you lack). Offering
+ * un-held codes in the matrix therefore only leads to a failed save, so we drop
+ * them up front. Already-selected codes are always kept, so editing a role
+ * never hides one of its existing grants.
+ *
+ * `canGrant` is the current user's permission predicate — see `useCanCheck`.
+ */
+export function filterGrantablePerms(
+  perms: PermissionView[],
+  canGrant: (code: string) => boolean,
+  selected: ReadonlySet<string>
+): PermissionView[] {
+  return perms.filter((p) => canGrant(p.code) || selected.has(p.code))
 }
 
 /**

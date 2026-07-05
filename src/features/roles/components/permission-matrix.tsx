@@ -1,10 +1,12 @@
 import { Lock, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
+import { useCanCheck } from '@/core/access'
 import { usePermissionsQuery } from '@/features/roles/api/queries'
 import {
   applyModule,
   computeModuleStats,
+  filterGrantablePerms,
   filterGroupsByQuery,
   isDangerCode,
   toggleCode,
@@ -37,9 +39,16 @@ interface Props {
 
 export function PermissionMatrix({ value, onChange, disabled }: Props) {
   const { data: perms = [], isLoading } = usePermissionsQuery()
+  const canGrant = useCanCheck()
   const [query, setQuery] = useState('')
   const selected = useMemo(() => new Set(value), [value])
-  const groups = useMemo(() => groupByModule(perms), [perms])
+  // Only surface permissions the current user can actually grant; the server
+  // 422s on the rest (privilege-escalation guard). Selected codes are kept so
+  // editing a role never hides one of its existing grants.
+  const groups = useMemo(
+    () => groupByModule(filterGrantablePerms(perms, canGrant, selected)),
+    [perms, canGrant, selected]
+  )
   const q = query.trim().toLowerCase()
 
   const visible = filterGroupsByQuery(groups, q)

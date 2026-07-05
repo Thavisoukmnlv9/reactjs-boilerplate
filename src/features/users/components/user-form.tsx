@@ -1,43 +1,32 @@
-import { useMemo, useState } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Building2, Check, Copy, IdCard, Mail, ShieldCheck, User as UserIcon } from 'lucide-react'
+import { useState } from 'react'
+import { useForm, useWatch } from 'react-hook-form'
+import { toast } from 'sonner'
 
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/shared/components/ui/checkbox'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
-import { Textarea } from '@/shared/components/ui/textarea'
 import { useBranchesQuery } from '@/features/branches/api/queries'
 import { useRolesQuery } from '@/features/roles/api/queries'
+import { useInviteUser, useUpdateUser } from '@/features/users/api/mutations'
 import type { MemberView } from '@/features/users/api/types'
-
-const NONE = '__none__'
-
-export interface UserFormValues {
-  email: string
-  name: string
-  role_id: string
-  branch_ids: string[]
-  default_branch_id: string
-  staff_title: string
-  staff_note: string
-}
+import { type UserFormValues, userFormSchema } from '@/features/users/schema'
+import { FormProvider } from '@/shared/components/form/core/FormRoot'
+import { Field } from '@/shared/components/form/fields/Field'
+import { FormInput } from '@/shared/components/form/fields/FormInput'
+import { FormMultiSelectChips } from '@/shared/components/form/fields/FormMultiSelectChips'
+import { FormSelect } from '@/shared/components/form/fields/FormSelect'
+import { FormTextarea } from '@/shared/components/form/fields/FormTextarea'
+import { FormSectionCard } from '@/shared/components/form/FormSectionCard'
+import { Button } from '@/shared/components/ui/button'
 
 interface Props {
   mode: 'create' | 'edit'
   initial?: MemberView
-  onSubmit: (values: UserFormValues) => void
-  onCancel?: () => void
-  isPending?: boolean
+  /** Close the sheet / navigate away. Called on cancel and after a completed edit. */
+  onDone: () => void
 }
 
-export function UserForm({ mode, initial, onSubmit, onCancel, isPending }: Props) {
-  const { data: rolesData } = useRolesQuery()
-  const { data: branchesData } = useBranchesQuery()
-  const roles = rolesData?.items ?? []
-  const branches = (branchesData?.items ?? []).filter((b) => b.is_active)
-
-  const [f, setF] = useState<UserFormValues>({
+function defaultsFor(initial?: MemberView): UserFormValues {
+  return {
     email: initial?.user.email ?? '',
     name: initial?.user.name ?? '',
     role_id: initial?.role_id ?? '',
@@ -45,148 +34,201 @@ export function UserForm({ mode, initial, onSubmit, onCancel, isPending }: Props
     default_branch_id: initial?.default_branch_id ?? '',
     staff_title: initial?.staff_title ?? '',
     staff_note: initial?.staff_note ?? '',
-  })
-  const set = <K extends keyof UserFormValues>(k: K, v: UserFormValues[K]) => setF((p) => ({ ...p, [k]: v }))
+  }
+}
 
-  function toggleBranch(id: string) {
-    setF((p) => {
-      const next = p.branch_ids.includes(id) ? p.branch_ids.filter((x) => x !== id) : [...p.branch_ids, id]
-      return { ...p, branch_ids: next, default_branch_id: next.includes(p.default_branch_id) ? p.default_branch_id : '' }
-    })
+export function UserForm({ mode, initial, onDone }: Props) {
+  const { data: rolesData } = useRolesQuery({ limit: 100 })
+  const { data: branchesData } = useBranchesQuery({ limit: 100 })
+  const roles = rolesData?.items ?? []
+  const branches = (branchesData?.items ?? []).filter((b) => b.is_active)
+
+  const invite = useInviteUser()
+  const update = useUpdateUser()
+  const isPending = invite.isPending || update.isPending
+  const [issued, setIssued] = useState<{ token: string; email: string } | null>(null)
+
+  const methods = useForm<UserFormValues>({
+    resolver: zodResolver(userFormSchema),
+    defaultValues: defaultsFor(initial),
+    mode: 'onBlur',
+  })
+
+  const roleId = useWatch({ control: methods.control, name: 'role_id' })
+  const branchIds = useWatch({ control: methods.control, name: 'branch_ids' })
+  const selectedRole = roles.find((r) => r.id === roleId)
+  const roleImpact = selectedRole
+    ? {
+        perms: selectedRole.permission_codes.length,
+        modules: new Set(selectedRole.permission_codes.map((c) => c.split('.')[0])).size,
+      }
+    : null
+
+  async function onSubmit(values: UserFormValues) {
+    try {
+      if (mode === 'create') {
+        const res = await invite.mutateAsync({
+          email: values.email.trim(),
+          name: values.name.trim() || undefined,
+          role_id: values.role_id,
+          branch_ids: values.branch_ids,
+          default_branch_id: values.default_branch_id || null,
+          staff_title: values.staff_title.trim() || null,
+          staff_note: values.staff_note.trim() || null,
+        })
+        setIssued({ token: res.invite_token, email: res.member.user.email ?? values.email })
+        toast.success('Invite created')
+      } else if (initial) {
+        await update.mutateAsync({
+          id: initial.id,
+          data: {
+            name: values.name.trim() || undefined,
+            role_id: values.role_id,
+            branch_ids: values.branch_ids,
+            default_branch_id: values.default_branch_id || null,
+            staff_title: values.staff_title.trim() || null,
+            staff_note: values.staff_note.trim() || null,
+          },
+        })
+        toast.success('Member updated')
+        onDone()
+      }
+    } catch (e) {
+      toast.error((e as Error).message)
+    }
   }
 
-  const selectedRole = roles.find((r) => r.id === f.role_id)
-  const roleImpact = useMemo(() => {
-    if (!selectedRole) return null
-    const modules = new Set(selectedRole.permission_codes.map((c) => c.split('.')[0]))
-    return { perms: selectedRole.permission_codes.length, modules: modules.size }
-  }, [selectedRole])
+  if (issued) {
+    const link = `${window.location.origin}/accept-invite?token=${issued.token}`
+    return (
+      <div className="space-y-4 p-4">
+        <div className="flex items-center gap-2 font-medium text-sm">
+          <Check className="size-4 text-success" /> Invite ready for {issued.email}
+        </div>
+        <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
+          <code className="flex-1 truncate font-mono text-xs">{link}</code>
+          <Button
+            size="icon"
+            variant="ghost"
+            aria-label="Copy invite link"
+            onClick={() => {
+              void navigator.clipboard.writeText(link)
+              toast.success('Invite link copied')
+            }}
+          >
+            <Copy className="size-4" />
+          </Button>
+        </div>
+        <p className="text-muted-foreground text-xs">The link is valid for 7 days. The member sets their own password.</p>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              methods.reset(defaultsFor())
+              setIssued(null)
+            }}
+          >
+            Invite another
+          </Button>
+          <Button onClick={onDone}>Done</Button>
+        </div>
+      </div>
+    )
+  }
+
+  const roleOptions = roles.map((r) => ({ value: r.id, label: `${r.name}${r.is_system ? ' · system' : ''}` }))
+  const branchOptions = branches.map((b) => ({ value: b.id, label: b.name }))
+  const defaultBranchOptions = branches
+    .filter((b) => (branchIds ?? []).includes(b.id))
+    .map((b) => ({ value: b.id, label: b.name }))
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault()
-        onSubmit(f)
-      }}
-      className="space-y-6"
-    >
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Identity</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="u-email">Email</Label>
+    <FormProvider methods={methods} onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4">
+        <FormSectionCard eyebrow="Identity" title="Who they are" icon={<UserIcon />} accent="brand">
+          <div className="grid gap-4 sm:grid-cols-2">
             {mode === 'create' ? (
-              <Input id="u-email" type="email" value={f.email} onChange={(e) => set('email', e.target.value)} placeholder="teammate@company.com" />
+              <FormInput
+                name="email"
+                label="Email"
+                type="email"
+                requiredMark
+                icon={<Mail />}
+                placeholder="teammate@company.com"
+              />
             ) : (
-              <p className="text-muted-foreground pt-2 text-sm">{initial?.user.email}</p>
+              <Field name="email" label="Email">
+                <p className="pt-2 font-mono text-muted-foreground text-sm">{initial?.user.email}</p>
+              </Field>
             )}
+            <FormInput name="name" label="Name" placeholder="Full name" />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="u-name">Name</Label>
-            <Input id="u-name" value={f.name} onChange={(e) => set('name', e.target.value)} placeholder="Full name" />
-          </div>
-        </CardContent>
-      </Card>
+        </FormSectionCard>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Role &amp; access</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="space-y-1.5">
-            <Label>Role</Label>
-            <Select value={f.role_id} onValueChange={(v) => set('role_id', v)} disabled={initial?.is_owner}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a role" />
-              </SelectTrigger>
-              <SelectContent>
-                {roles.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.name}
-                    {r.is_system ? ' (system)' : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <FormSectionCard
+          eyebrow="Access"
+          title="Role & permissions"
+          description={initial?.is_owner ? 'The owner keeps full access — their role is fixed.' : undefined}
+          icon={<ShieldCheck />}
+          accent="violet"
+        >
+          <FormSelect
+            name="role_id"
+            label="Role"
+            requiredMark
+            options={roleOptions}
+            placeholder="Select a role"
+            disabled={initial?.is_owner}
+          />
           {roleImpact ? (
             <p className="text-muted-foreground text-sm">
-              Grants <span className="text-foreground font-medium">{roleImpact.perms}</span> permissions across{' '}
-              <span className="text-foreground font-medium">{roleImpact.modules}</span> module
-              {roleImpact.modules === 1 ? '' : 's'}.
+              Grants <span className="font-medium text-foreground tabular-nums">{roleImpact.perms}</span> permissions
+              across <span className="font-medium text-foreground tabular-nums">{roleImpact.modules}</span>{' '}
+              module{roleImpact.modules === 1 ? '' : 's'}.
             </p>
           ) : null}
-        </CardContent>
-      </Card>
+        </FormSectionCard>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Branch access</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+        <FormSectionCard
+          eyebrow="Branches"
+          title="Branch access"
+          description="Which locations this member can operate."
+          icon={<Building2 />}
+          accent="sky"
+        >
           {branches.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No active branches to assign.</p>
+            <p className="text-muted-foreground text-sm">No active branches to assign yet.</p>
           ) : (
-            <div className="space-y-2">
-              {branches.map((b) => (
-                <label key={b.id} className="flex cursor-pointer items-center gap-2 text-sm">
-                  <Checkbox checked={f.branch_ids.includes(b.id)} onCheckedChange={() => toggleBranch(b.id)} />
-                  {b.name}
-                </label>
-              ))}
-            </div>
+            <>
+              <FormMultiSelectChips name="branch_ids" label="Assigned branches" options={branchOptions} />
+              {(branchIds ?? []).length > 0 ? (
+                <FormSelect
+                  name="default_branch_id"
+                  label="Default branch"
+                  clearable
+                  clearLabel="No default"
+                  options={defaultBranchOptions}
+                  placeholder="No default"
+                />
+              ) : null}
+            </>
           )}
-          {f.branch_ids.length > 0 ? (
-            <div className="space-y-1.5">
-              <Label>Default branch</Label>
-              <Select value={f.default_branch_id || NONE} onValueChange={(v) => set('default_branch_id', v === NONE ? '' : v)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE}>None</SelectItem>
-                  {branches
-                    .filter((b) => f.branch_ids.includes(b.id))
-                    .map((b) => (
-                      <SelectItem key={b.id} value={b.id}>
-                        {b.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
+        </FormSectionCard>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Staff details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="u-title">Title</Label>
-            <Input id="u-title" value={f.staff_title} onChange={(e) => set('staff_title', e.target.value)} placeholder="e.g. Manager" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="u-note">Notes</Label>
-            <Textarea id="u-note" rows={2} value={f.staff_note} onChange={(e) => set('staff_note', e.target.value)} />
-          </div>
-        </CardContent>
-      </Card>
+        <FormSectionCard eyebrow="Staff" title="Staff details" icon={<IdCard />} accent="amber">
+          <FormInput name="staff_title" label="Title" placeholder="e.g. Store manager" />
+          <FormTextarea name="staff_note" label="Notes" rows={3} placeholder="Internal note (optional)" />
+        </FormSectionCard>
+      </div>
 
-      <div className="flex gap-2">
-        <Button type="submit" disabled={isPending || !f.role_id || (mode === 'create' && !f.email.trim())}>
+      <div className="flex items-center justify-end gap-2 border-t bg-background/95 p-4 supports-[backdrop-filter]:bg-background/80 supports-[backdrop-filter]:backdrop-blur">
+        <Button type="button" variant="outline" onClick={onDone} disabled={isPending}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isPending}>
           {isPending ? 'Saving…' : mode === 'create' ? 'Send invite' : 'Save changes'}
         </Button>
-        {onCancel ? (
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-        ) : null}
       </div>
-    </form>
+    </FormProvider>
   )
 }

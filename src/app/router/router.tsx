@@ -9,6 +9,7 @@ import {
 import { z } from 'zod'
 
 import { meQueryOptions, tokenStorage } from '@/core/access'
+import { tableSearchBase } from '@/shared/table/table-url-state'
 import { AuthLayout } from '@/app/layouts/auth-layout'
 import { AppLayout } from '@/app/router/app-layout'
 import { NotFound } from '@/app/router/not-found'
@@ -129,23 +130,39 @@ export const appRoute = createRoute({
 const dashboardRoute = createRoute({ getParentRoute: () => appRoute, path: '/dashboard', component: DashboardPage })
 
 // ── Roles ───────────────────────────────────────────────────────────────────
-const rolesRoute = createRoute({ getParentRoute: () => appRoute, path: '/roles', staticData: { permission: PERMISSIONS.ROLES_READ }, component: RolesPage })
+const rolesRoute = createRoute({ getParentRoute: () => appRoute, path: '/roles', staticData: { permission: PERMISSIONS.ROLES_READ }, validateSearch: z.object(tableSearchBase), component: RolesPage })
 const roleNewRoute = createRoute({ getParentRoute: () => appRoute, path: '/roles/new', staticData: { permission: PERMISSIONS.ROLES_MANAGE }, component: RoleCreatePage })
 const roleDetailRoute = createRoute({ getParentRoute: () => appRoute, path: '/roles/$roleId', staticData: { permission: PERMISSIONS.ROLES_READ }, component: RoleDetailPage })
 const roleEditRoute = createRoute({ getParentRoute: () => appRoute, path: '/roles/$roleId/edit', staticData: { permission: PERMISSIONS.ROLES_MANAGE }, component: RoleEditPage })
 
 // ── Branches ────────────────────────────────────────────────────────────────
-const branchesRoute = createRoute({ getParentRoute: () => appRoute, path: '/branches', staticData: { permission: PERMISSIONS.BRANCHES_READ }, component: BranchesPage })
+const branchesSearchSchema = z.object({
+  ...tableSearchBase,
+  status: z.enum(['active', 'archived']).optional(),
+  vertical: z.string().optional(),
+})
+const branchesRoute = createRoute({ getParentRoute: () => appRoute, path: '/branches', staticData: { permission: PERMISSIONS.BRANCHES_READ }, validateSearch: branchesSearchSchema, component: BranchesPage })
 const branchNewRoute = createRoute({ getParentRoute: () => appRoute, path: '/branches/new', staticData: { permission: PERMISSIONS.BRANCHES_MANAGE }, component: BranchCreatePage })
 const branchEditRoute = createRoute({ getParentRoute: () => appRoute, path: '/branches/$branchId/edit', staticData: { permission: PERMISSIONS.BRANCHES_MANAGE }, component: BranchEditPage })
 
 // ── Policies ────────────────────────────────────────────────────────────────
-const policiesRoute = createRoute({ getParentRoute: () => appRoute, path: '/policies', staticData: { permission: PERMISSIONS.POLICIES_READ }, component: PoliciesPage })
+const policiesSearchSchema = z.object({
+  ...tableSearchBase,
+  subject: z.string().optional(),
+  action: z.string().optional(),
+})
+const policiesRoute = createRoute({ getParentRoute: () => appRoute, path: '/policies', staticData: { permission: PERMISSIONS.POLICIES_READ }, validateSearch: policiesSearchSchema, component: PoliciesPage })
 const policyNewRoute = createRoute({ getParentRoute: () => appRoute, path: '/policies/new', staticData: { permission: PERMISSIONS.POLICIES_MANAGE }, component: PolicyCreatePage })
 const policyEditRoute = createRoute({ getParentRoute: () => appRoute, path: '/policies/$policyId/edit', staticData: { permission: PERMISSIONS.POLICIES_MANAGE }, component: PolicyEditPage })
 
 // ── Users ───────────────────────────────────────────────────────────────────
-const usersRoute = createRoute({ getParentRoute: () => appRoute, path: '/users', staticData: { permission: PERMISSIONS.USERS_READ }, component: UsersPage })
+const usersSearchSchema = z.object({
+  ...tableSearchBase,
+  status: z.string().optional(),
+  role_id: z.string().optional(),
+})
+const usersRoute = createRoute({ getParentRoute: () => appRoute, path: '/users', staticData: { permission: PERMISSIONS.USERS_READ }, validateSearch: usersSearchSchema, component: UsersPage })
+// Legacy routes now open the in-context create/edit Sheet on the list page.
 const userNewRoute = createRoute({ getParentRoute: () => appRoute, path: '/users/new', staticData: { permission: PERMISSIONS.USERS_INVITE }, component: UserCreatePage })
 const userDetailRoute = createRoute({ getParentRoute: () => appRoute, path: '/users/$memberId', staticData: { permission: PERMISSIONS.USERS_READ }, component: UserDetailPage })
 

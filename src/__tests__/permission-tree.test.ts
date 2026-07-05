@@ -4,6 +4,7 @@ import type { PermissionView } from '@/features/roles/api/types'
 import {
   applyModule,
   computeModuleStats,
+  filterGrantablePerms,
   filterGroupsByQuery,
   isDangerCode,
   toggleCode,
@@ -38,6 +39,44 @@ describe('isDangerCode', () => {
   })
   it('false against an empty danger list', () => {
     expect(isDangerCode('platform.organization.delete', [])).toBe(false)
+  })
+})
+
+describe('filterGrantablePerms', () => {
+  const catalog = [
+    perm('platform.roles.read'),
+    perm('ecommerce.view'),
+    perm('platform.organization.delete', 'platform'),
+  ]
+  // Current user holds only the platform.roles.read permission.
+  const canGrant = (code: string) => code === 'platform.roles.read'
+
+  it('keeps codes the user holds and drops the rest', () => {
+    const out = filterGrantablePerms(catalog, canGrant, new Set())
+    expect(out.map((p) => p.code)).toEqual(['platform.roles.read'])
+  })
+
+  it('keeps an already-selected code even when not held (edit mode)', () => {
+    const out = filterGrantablePerms(
+      catalog,
+      canGrant,
+      new Set(['ecommerce.view'])
+    )
+    expect(out.map((p) => p.code)).toEqual([
+      'platform.roles.read',
+      'ecommerce.view',
+    ])
+  })
+
+  it('drops a code that is neither held nor selected', () => {
+    const out = filterGrantablePerms(catalog, canGrant, new Set())
+    expect(out.some((p) => p.code === 'ecommerce.view')).toBe(false)
+  })
+
+  it('does not mutate the input array', () => {
+    const snapshot = JSON.stringify(catalog)
+    filterGrantablePerms(catalog, canGrant, new Set(['ecommerce.view']))
+    expect(JSON.stringify(catalog)).toBe(snapshot)
   })
 })
 

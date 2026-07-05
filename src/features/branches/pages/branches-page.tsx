@@ -1,26 +1,88 @@
-import { Link } from '@tanstack/react-router'
-import { Building2, Pencil, Plus, Star, Trash2 } from 'lucide-react'
+import type { ColumnDef } from '@tanstack/react-table'
+import { Archive, ArchiveRestore, Building2, Layers, Pencil, Plus, Star, Trash2 } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import { PageHeader } from '@/components/common/page-header'
-import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/shared/components/ui/badge'
 import { useCan } from '@/core/access'
+import { endpoints } from '@/core/api/endpoints'
 import { PERMISSIONS } from '@/core/constants/permissions'
-import { useDeleteBranch, useMakeMainBranch } from '@/features/branches/api/mutations'
-import { useBranchesQuery } from '@/features/branches/api/queries'
+import { useBulkBranches, useDeleteBranch, useMakeMainBranch } from '@/features/branches/api/mutations'
+import { useBranchesQuery, useBranchQuery, useBranchStatsQuery } from '@/features/branches/api/queries'
+import { BRANCH_VERTICALS, type BranchView } from '@/features/branches/api/types'
+import { BranchForm } from '@/features/branches/components/branch-form'
+import { summarizeBulk } from '@/shared/api/bulk'
+import { downloadFile } from '@/shared/api/download'
+import { IdentityCell } from '@/shared/components/data-display/identity-cell'
+import { StatsCardsRow } from '@/shared/components/data-display/stats-cards-row'
+import { StatusChip } from '@/shared/components/data-display/status-chip'
+import { EmptyState } from '@/shared/components/states/empty-state'
+import { ErrorState } from '@/shared/components/states/error-state'
+import { Badge } from '@/shared/components/ui/badge'
+import { Button } from '@/shared/components/ui/button'
+import { confirm } from '@/shared/components/ui/confirm'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
+import { Skeleton } from '@/shared/components/ui/skeleton'
+import { DataTable } from '@/shared/table/data-table'
+import { RowActions, type RowAction } from '@/shared/table/row-actions'
+import { createSelectColumn } from '@/shared/table/select-column'
+import { TableBulkActionBar, type BulkAction } from '@/shared/table/table-bulk-action-bar'
+import { TableColumnVisibility } from '@/shared/table/table-column-visibility'
+import { TableExportMenu } from '@/shared/table/table-export-menu'
+import { TableFilterChips } from '@/shared/table/table-filter-chips'
+import { TableSearch } from '@/shared/table/table-search'
+import { TableToolbar } from '@/shared/table/table-toolbar'
+import { type TableSearchState, toQueryString, useTableUrlState } from '@/shared/table/table-url-state'
+import { useTableSelection } from '@/shared/table/use-table-selection'
+
+const ALL = '__all__'
+
+interface BranchesSearch extends TableSearchState {
+  status?: 'active' | 'archived'
+  vertical?: string
+}
+
+const HIDEABLE = [
+  { id: 'code', label: 'Code' },
+  { id: 'vertical', label: 'Vertical' },
+  { id: 'is_active', label: 'Status' },
+]
 
 export function BranchesPage() {
-  const { data, isLoading, isError } = useBranchesQuery()
+  const { search, pageIndex, pageSize, setPagination, setSort, setQuery, setFilter, openCreate, openEdit, closeSheet } =
+    useTableUrlState<BranchesSearch>()
+
   const canManage = useCan(PERMISSIONS.BRANCHES_MANAGE)
   const canDelete = useCan(PERMISSIONS.BRANCHES_DELETE)
+
+  const isActive = search.status === 'active' ? true : search.status === 'archived' ? false : undefined
+  const branchesQuery = useBranchesQuery({
+    q: search.q,
+    is_active: isActive,
+    vertical: search.vertical,
+    sort: search.sort,
+    order: search.order,
+    limit: pageSize,
+    offset: pageIndex * pageSize,
+  })
+  const statsQuery = useBranchStatsQuery()
+
+  const items = branchesQuery.data?.items ?? []
+  const total = branchesQuery.data?.total ?? 0
+
+  const selection = useTableSelection(items)
+  const bulk = useBulkBranches()
   const del = useDeleteBranch()
   const makeMain = useMakeMainBranch()
-  const branches = data?.items ?? []
+  const [hidden, setHidden] = useState<Set<string>>(new Set())
+
+  const editing = search.sheet === 'edit'
+  const editBranchQuery = useBranchQuery(editing ? search.sheetId : undefined)
 
   async function handleMakeMain(id: string, name: string) {
-    if (!window.confirm(`Make "${name}" the main branch?`)) return
+    const ok = await confirm({ title: `Make "${name}" the main branch?`, description: 'The current main branch is demoted.', confirmText: 'Make main' })
+    if (!ok) return
     try {
       await makeMain.mutateAsync(id)
       toast.success('Main branch updated')
@@ -28,8 +90,10 @@ export function BranchesPage() {
       toast.error((e as Error).message)
     }
   }
+
   async function handleDelete(id: string, name: string) {
-    if (!window.confirm(`Delete "${name}"?`)) return
+    const ok = await confirm({ title: `Delete "${name}"?`, description: 'This permanently removes the branch.', confirmText: 'Delete', confirmVariant: 'destructive' })
+    if (!ok) return
     try {
       await del.mutateAsync(id)
       toast.success('Branch deleted')
@@ -38,89 +102,233 @@ export function BranchesPage() {
     }
   }
 
+  async function runBulk(action: 'archive' | 'activate' | 'delete', verb: string, destructive = false) {
+    if (destructive) {
+      const ok = await confirm({
+        title: `Delete ${selection.selectedCount} branch${selection.selectedCount === 1 ? '' : 'es'}?`,
+        description: 'The main branch is skipped. This cannot be undone.',
+        confirmText: 'Delete',
+        confirmVariant: 'destructive',
+      })
+      if (!ok) return
+    }
+    try {
+      const result = await bulk.mutateAsync({ action, ids: selection.ids })
+      const { ok, message } = summarizeBulk(result, verb)
+      if (ok) toast.success(message)
+      else toast.error(message)
+      selection.clear()
+    } catch (e) {
+      toast.error((e as Error).message)
+    }
+  }
+
+  async function handleExport() {
+    try {
+      const qs = toQueryString({ q: search.q, is_active: isActive, vertical: search.vertical, sort: search.sort, order: search.order, format: 'csv' })
+      await downloadFile(`${endpoints.branches.export}${qs}`, 'branches.csv')
+    } catch (e) {
+      toast.error((e as Error).message)
+    }
+  }
+
+  const columns = useMemo<ColumnDef<BranchView, unknown>[]>(() => {
+    const base: ColumnDef<BranchView, unknown>[] = [
+      {
+        id: 'name',
+        header: 'Branch',
+        enableSorting: true,
+        cell: ({ row }) => {
+          const b = row.original
+          return (
+            <IdentityCell
+              icon={<Building2 />}
+              primary={
+                <span className="flex items-center gap-1.5">
+                  {b.name}
+                  {b.is_main ? (
+                    <Badge variant="secondary" className="gap-1 text-[10px]">
+                      <Star className="size-3" /> Main
+                    </Badge>
+                  ) : null}
+                </span>
+              }
+              secondary={b.code ?? undefined}
+            />
+          )
+        },
+      },
+      { id: 'code', header: 'Code', enableSorting: true, cell: ({ row }) => <span className="font-mono text-muted-foreground text-sm">{row.original.code ?? '—'}</span> },
+      {
+        id: 'vertical',
+        header: 'Vertical',
+        enableSorting: true,
+        cell: ({ row }) => <span className="text-muted-foreground text-sm capitalize">{row.original.vertical?.toLowerCase() ?? '—'}</span>,
+      },
+      { id: 'is_active', header: 'Status', enableSorting: true, cell: ({ row }) => <StatusChip status={row.original.is_active ? 'Active' : 'Archived'} /> },
+      {
+        id: 'actions',
+        header: '',
+        enableSorting: false,
+        size: 120,
+        cell: ({ row }) => {
+          const b = row.original
+          const actions: RowAction[] = []
+          if (canManage && !b.is_main) actions.push({ label: 'Make main', icon: Star, onClick: () => void handleMakeMain(b.id, b.name) })
+          if (canManage) actions.push({ label: 'Edit', icon: Pencil, onClick: () => openEdit(b.id) })
+          if (canDelete && !b.is_main) actions.push({ label: 'Delete', icon: Trash2, variant: 'destructive', onClick: () => void handleDelete(b.id, b.name) })
+          return actions.length ? <div className="flex justify-end"><RowActions actions={actions} /></div> : null
+        },
+      },
+    ]
+    const visible = base.filter((c) => !hidden.has(c.id as string))
+    return canManage || canDelete ? [createSelectColumn(selection, 'branch'), ...visible] : visible
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hidden, canManage, canDelete, selection])
+
+  const statItems = [
+    { id: 'total', label: 'Total branches', value: statsQuery.data?.total ?? 0, icon: <Building2 /> },
+    { id: 'active', label: 'Active', value: statsQuery.data?.active ?? 0, tone: 'success' as const },
+    { id: 'archived', label: 'Archived', value: statsQuery.data?.archived ?? 0, tone: 'warning' as const },
+    { id: 'verticals', label: 'Verticals', value: Object.keys(statsQuery.data?.by_vertical ?? {}).length, icon: <Layers /> },
+  ]
+
+  const chips = []
+  if (search.status) chips.push({ id: 'status', label: `Status: ${search.status}`, onRemove: () => setFilter('status', undefined) })
+  if (search.vertical) chips.push({ id: 'vertical', label: `Vertical: ${search.vertical}`, onRemove: () => setFilter('vertical', undefined) })
+
+  const hasFilters = Boolean(search.q || search.status || search.vertical)
+  const unfilteredEmpty = !branchesQuery.isLoading && !branchesQuery.isError && total === 0 && !hasFilters
+
+  const bulkActions: BulkAction[] = []
+  if (canManage) {
+    bulkActions.push({ label: 'Activate', icon: ArchiveRestore, onClick: () => void runBulk('activate', 'activated') })
+    bulkActions.push({ label: 'Archive', icon: Archive, onClick: () => void runBulk('archive', 'archived') })
+  }
+  if (canDelete) bulkActions.push({ label: 'Delete', icon: Trash2, variant: 'destructive', onClick: () => void runBulk('delete', 'deleted', true) })
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Branches"
-        description="Locations members operate. Exactly one branch is the main branch."
+        description="Locations your members operate. Exactly one branch is the main branch."
         actions={
           canManage ? (
-            <Button asChild size="sm">
-              <Link to="/branches/new">
-                <Plus className="size-4" /> New branch
-              </Link>
+            <Button size="sm" onClick={openCreate}>
+              <Plus className="size-4" /> New branch
             </Button>
           ) : undefined
         }
       />
 
-      {isLoading ? (
-        <p className="text-muted-foreground text-sm">Loading branches…</p>
-      ) : isError ? (
-        <p className="text-destructive text-sm">Failed to load branches.</p>
-      ) : branches.length === 0 ? (
-        <div className="rounded-md border p-8 text-center">
-          <Building2 className="text-muted-foreground mx-auto size-8" />
-          <p className="mt-2 text-sm font-medium">No branches yet</p>
-        </div>
+      <StatsCardsRow items={statItems} isLoading={statsQuery.isLoading} />
+
+      {unfilteredEmpty ? (
+        <EmptyState
+          icon={<Building2 className="size-7" />}
+          title="No branches yet"
+          description="Create your first branch to start assigning members and commerce settings."
+          action={canManage ? <Button onClick={openCreate}><Plus className="size-4" /> New branch</Button> : undefined}
+        />
+      ) : branchesQuery.isError ? (
+        <ErrorState message={(branchesQuery.error as Error)?.message} onRetry={() => void branchesQuery.refetch()} />
       ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Code</TableHead>
-                <TableHead>Vertical</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-32" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {branches.map((b) => (
-                <TableRow key={b.id}>
-                  <TableCell>
-                    <span className="font-medium">{b.name}</span>
-                    {b.is_main ? (
-                      <Badge variant="secondary" className="ml-2 gap-1 text-xs">
-                        <Star className="size-3" /> Main
-                      </Badge>
-                    ) : null}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">{b.code ?? '—'}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">{b.vertical ?? '—'}</TableCell>
-                  <TableCell>
-                    <span className="flex items-center gap-1.5 text-sm">
-                      <span className={`size-2 rounded-full ${b.is_active ? 'bg-green-500' : 'bg-muted-foreground/40'}`} />
-                      {b.is_active ? 'Active' : 'Archived'}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-1">
-                      {canManage && !b.is_main ? (
-                        <Button variant="ghost" size="icon" aria-label="Make main" title="Make main" onClick={() => handleMakeMain(b.id, b.name)}>
-                          <Star className="size-4" />
-                        </Button>
-                      ) : null}
-                      {canManage ? (
-                        <Button asChild variant="ghost" size="icon" aria-label="Edit">
-                          <Link to="/branches/$branchId/edit" params={{ branchId: b.id }}>
-                            <Pencil className="size-4" />
-                          </Link>
-                        </Button>
-                      ) : null}
-                      {canDelete && !b.is_main ? (
-                        <Button variant="ghost" size="icon" aria-label="Delete" disabled={del.isPending} onClick={() => handleDelete(b.id, b.name)}>
-                          <Trash2 className="size-4" />
-                        </Button>
-                      ) : null}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <div>
+          <TableToolbar
+            left={
+              <>
+                <TableSearch value={search.q ?? ''} onChange={setQuery} placeholder="Search name or code…" />
+                <Select value={search.status ?? ALL} onValueChange={(v) => setFilter('status', v === ALL ? undefined : v)}>
+                  <SelectTrigger className="h-9 w-[140px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL}>All statuses</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="archived">Archived</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={search.vertical ?? ALL} onValueChange={(v) => setFilter('vertical', v === ALL ? undefined : v)}>
+                  <SelectTrigger className="h-9 w-[140px]">
+                    <SelectValue placeholder="Vertical" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL}>All verticals</SelectItem>
+                    {BRANCH_VERTICALS.map((v) => (
+                      <SelectItem key={v} value={v} className="capitalize">
+                        {v.toLowerCase()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <TableFilterChips chips={chips} />
+              </>
+            }
+            right={
+              <>
+                <TableColumnVisibility
+                  columns={HIDEABLE.map((c) => ({ id: c.id, label: c.label, visible: !hidden.has(c.id), hideable: true }))}
+                  onChange={(id, visible) =>
+                    setHidden((prev) => {
+                      const next = new Set(prev)
+                      if (visible) next.delete(id)
+                      else next.add(id)
+                      return next
+                    })
+                  }
+                />
+                <TableExportMenu onExport={{ csv: handleExport }} />
+              </>
+            }
+          />
+
+          <DataTable
+            key={`${search.q ?? ''}|${search.status ?? ''}|${search.vertical ?? ''}|${pageSize}`}
+            columns={columns}
+            data={items}
+            totalCount={total}
+            isLoading={branchesQuery.isLoading}
+            pageIndex={pageIndex}
+            pageSize={pageSize}
+            onPaginationChange={setPagination}
+            sortBy={search.sort}
+            sortOrder={search.order}
+            onSortingChange={(s) => {
+              const c = s[0]
+              setSort(c?.id || undefined, c?.id ? (c.desc ? 'desc' : 'asc') : undefined)
+            }}
+            enableRowSelection={false}
+            enableFiltering={false}
+            keyExtractor={(b) => b.id}
+            emptyMessage="No branches match your filters."
+          />
         </div>
       )}
+
+      {bulkActions.length ? (
+        <TableBulkActionBar selectedCount={selection.selectedCount} totalCount={total} onClearSelection={selection.clear} actions={bulkActions} />
+      ) : null}
+
+      <Sheet open={search.sheet === 'create' || editing} onOpenChange={(o) => (o ? null : closeSheet())}>
+        <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-xl">
+          <SheetHeader className="border-b">
+            <SheetTitle>{search.sheet === 'create' ? 'New branch' : 'Edit branch'}</SheetTitle>
+            <SheetDescription>
+              {search.sheet === 'create' ? 'Add a location with its own commerce settings.' : 'Update this branch and its commerce settings.'}
+            </SheetDescription>
+          </SheetHeader>
+          {search.sheet === 'create' ? (
+            <BranchForm key="create" mode="create" onDone={closeSheet} />
+          ) : editBranchQuery.data ? (
+            <BranchForm key={editBranchQuery.data.id} mode="edit" initial={editBranchQuery.data} onDone={closeSheet} />
+          ) : (
+            <div className="flex-1 space-y-3 p-4">
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

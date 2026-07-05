@@ -28,3 +28,34 @@ export interface Paginated<T> {
   limit: number
   offset: number
 }
+
+/** Aggregate counts for the roles-page stat cards. */
+export interface RoleStats {
+  total: number
+  system: number
+  custom: number
+  unused: number
+}
+
+export const ROLE_SORT_FIELDS = ['name', 'created_at', 'is_system'] as const
+
+export interface RolesListParams {
+  q?: string
+  sort?: string
+  order?: 'asc' | 'desc'
+  limit?: number
+  offset?: number
+}
+
+export type RoleBulkAction = 'delete'
+
+export interface BulkRolesInput {
+  action: RoleBulkAction
+  ids: string[]
+}
+
+export const roleKeys = {
+  all: ['roles'] as const,
+  list: (params: RolesListParams) => ['roles', 'list', params] as const,
+  stats: ['roles', 'stats'] as const,
+}

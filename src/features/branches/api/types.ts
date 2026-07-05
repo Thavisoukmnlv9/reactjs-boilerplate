@@ -44,7 +44,38 @@ export interface Paginated<T> {
   offset: number
 }
 
+/** Aggregate counts for the branches-page stat cards. */
+export interface BranchStats {
+  total: number
+  active: number
+  archived: number
+  by_vertical: Record<string, number>
+}
+
+export const BRANCH_VERTICALS = ['GENERAL', 'RETAIL', 'SERVICE'] as const
+export const BRANCH_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY'] as const
+export const BRANCH_SORT_FIELDS = ['name', 'code', 'vertical', 'is_active', 'created_at', 'updated_at'] as const
+
+export interface BranchesListParams {
+  q?: string
+  is_active?: boolean
+  vertical?: string
+  sort?: string
+  order?: 'asc' | 'desc'
+  limit?: number
+  offset?: number
+}
+
+export type BranchBulkAction = 'archive' | 'activate' | 'delete'
+
+export interface BulkBranchesInput {
+  action: BranchBulkAction
+  ids: string[]
+}
+
 export const branchKeys = {
   all: ['branches'] as const,
+  list: (params: BranchesListParams) => ['branches', 'list', params] as const,
+  stats: ['branches', 'stats'] as const,
   one: (id: string) => ['branches', id] as const,
 }

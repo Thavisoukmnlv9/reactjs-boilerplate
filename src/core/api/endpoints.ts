@@ -15,6 +15,9 @@ export const endpoints = {
   },
   users: {
     list: '/users',
+    stats: '/users/stats',
+    export: '/users/export',
+    bulk: '/users/bulk',
     get: (id: string) => `/users/${id}`,
     update: (id: string) => `/users/${id}`,
     delete: (id: string) => `/users/${id}`,
@@ -30,6 +33,9 @@ export const endpoints = {
   },
   roles: {
     list: '/roles',
+    stats: '/roles/stats',
+    export: '/roles/export',
+    bulk: '/roles/bulk',
     get: (id: string) => `/roles/${id}`,
     create: '/roles',
     update: (id: string) => `/roles/${id}`,
@@ -42,6 +48,10 @@ export const endpoints = {
   },
   policies: {
     list: '/policies',
+    stats: '/policies/stats',
+    export: '/policies/export',
+    bulk: '/policies/bulk',
+    conditionSchema: '/policies/condition-schema',
     get: (id: string) => `/policies/${id}`,
     create: '/policies',
     update: (id: string) => `/policies/${id}`,
@@ -49,6 +59,9 @@ export const endpoints = {
   },
   branches: {
     list: '/branches',
+    stats: '/branches/stats',
+    export: '/branches/export',
+    bulk: '/branches/bulk',
     get: (id: string) => `/branches/${id}`,
     create: '/branches',
     update: (id: string) => `/branches/${id}`,

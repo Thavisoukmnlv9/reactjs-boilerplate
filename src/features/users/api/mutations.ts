@@ -2,8 +2,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { apiClient } from '@/core/api/api-client'
 import { endpoints } from '@/core/api/endpoints'
+import type { BulkResult } from '@/shared/api/bulk'
 
-import { userKeys, type InviteInput, type InviteIssued, type MemberView, type UpdateInput } from './types'
+import { userKeys, type BulkUsersInput, type InviteInput, type InviteIssued, type MemberView, type UpdateInput } from './types'
 
 function useInvalidateUsers() {
   const qc = useQueryClient()
@@ -43,6 +44,14 @@ export function useResendInvite() {
   const invalidate = useInvalidateUsers()
   return useMutation({
     mutationFn: (id: string) => apiClient.post<InviteIssued>(endpoints.users.resendInvite(id)),
+    onSuccess: invalidate,
+  })
+}
+
+export function useBulkUsers() {
+  const invalidate = useInvalidateUsers()
+  return useMutation({
+    mutationFn: (input: BulkUsersInput) => apiClient.post<BulkResult>(endpoints.users.bulk, input),
     onSuccess: invalidate,
   })
 }
